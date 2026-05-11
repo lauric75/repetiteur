@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="RepétiTeur" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>RepétiTeur</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <style>
+    :root {
+      --color-text-primary: #1a1a1a; --color-text-secondary: #6b7280; --color-text-tertiary: #9ca3af;
+      --color-background-primary: #ffffff; --color-background-secondary: #f3f4f6;
+      --color-border-tertiary: rgba(0,0,0,0.10); --color-border-secondary: rgba(0,0,0,0.18);
+      --color-background-info: #E6F1FB; --color-text-info: #185FA5;
+      --color-background-success: #EAF3DE; --color-text-success: #27500A; --color-border-success: #C0DD97;
+      --color-background-danger: #FCEBEB; --color-text-danger: #791F1F; --color-border-danger: #F7C1C1;
+      --color-background-warning: #FAEEDA; --color-text-warning: #633806;
+      --border-radius-md: 8px; --border-radius-lg: 12px;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      --blue: #248DCD; --blue-light: #44B6E8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text-primary: #f0f0f0; --color-text-secondary: #9ca3af; --color-text-tertiary: #6b7280;
+        --color-background-primary: #1c1c1e; --color-background-secondary: #2c2c2e;
+        --color-border-tertiary: rgba(255,255,255,0.10); --color-border-secondary: rgba(255,255,255,0.18);
+        --color-background-info: #0c3058; --color-text-info: #7cc8f8;
+        --color-background-success: #1a2e0a; --color-text-success: #a3d977; --color-border-success: #3b6d11;
+        --color-background-danger: #2e0a0a; --color-text-danger: #f08080; --color-border-danger: #7a2020;
+        --color-background-warning: #2e1a00; --color-text-warning: #f5c97a;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: var(--font-sans); background: var(--color-background-secondary); min-height: 100vh; display: flex; justify-content: center; padding: env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0); }
+    #app { width: 100%; max-width: 680px; background: var(--color-background-secondary); padding: 1.5rem 1.25rem 3rem; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .header { margin-bottom: 2rem; }
+    .logo { font-size: 24px; font-weight: 600; color: var(--color-text-primary); letter-spacing: -0.5px; }
+    .logo span { color: var(--blue-light); }
+    .subtitle { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+    .upload-zone { border: 1.5px dashed var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 3rem 2rem; text-align: center; cursor: pointer; transition: background 0.15s; background: var(--color-background-primary); }
+    .upload-zone:hover, .upload-zone:active { background: var(--color-background-secondary); }
+    .upload-zone i { font-size: 40px; color: var(--color-text-secondary); display: block; margin-bottom: 1rem; }
+    .upload-zone p { font-size: 15px; color: var(--color-text-secondary); }
+    .upload-zone strong { color: var(--color-text-primary); }
+    #fileInput { display: none; }
+    .preview-wrap { margin-top: 1.5rem; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); }
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 1.5rem 0; }
+    .config-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
+    .config-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
+    .config-val { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+    .btn-primary { background: var(--blue); color: #fff; border: none; border-radius: var(--border-radius-md); padding: 14px 24px; font-size: 16px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 1rem; transition: opacity 0.15s; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .loading-block { text-align: center; padding: 4rem 1rem; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--color-border-tertiary); border-top-color: var(--blue-light); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.25rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: var(--color-text-secondary); font-size: 15px; }
+    .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .matiere-badge { font-size: 12px; padding: 4px 12px; background: var(--color-background-info); color: var(--color-text-info); border-radius: var(--border-radius-md); font-weight: 500; }
+    .progress-bar-wrap { background: var(--color-background-secondary); border-radius: 99px; height: 6px; flex: 1; margin: 0 1rem; }
+    .progress-bar { background: var(--blue-light); height: 6px; border-radius: 99px; transition: width 0.3s; }
+    .progress-label { font-size: 13px; color: var(--color-text-secondary); white-space: nowrap; }
+    .question-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; margin-bottom: 1rem; }
+    .question-type { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--color-text-secondary); margin-bottom: 8px; }
+    .question-text { font-size: 16px; font-weight: 500; color: var(--color-text-primary); line-height: 1.5; margin-bottom: 1.25rem; }
+    .options-grid { display: flex; flex-direction: column; gap: 8px; }
+    .opt-btn { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 13px 16px; font-size: 15px; text-align: left; cursor: pointer; color: var(--color-text-primary); transition: background 0.1s; font-family: var(--font-sans); }
+    .opt-btn:hover:not(:disabled) { background: var(--color-background-secondary); }
+    .opt-btn.correct { border-color: #3B6D11; background: var(--color-background-success); color: var(--color-text-success); }
+    .opt-btn.wrong { border-color: #A32D2D; background: var(--color-background-danger); color: var(--color-text-danger); }
+    .opt-btn:disabled { cursor: default; }
+    .open-input { width: 100%; padding: 12px 14px; font-size: 15px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); resize: vertical; min-height: 90px; font-family: var(--font-sans); }
+    .open-input:focus { outline: none; border-color: var(--blue-light); }
+    .feedback-block { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: var(--border-radius-md); font-size: 14px; line-height: 1.6; }
+    .feedback-block.ok { background: var(--color-background-success); color: var(--color-text-success); border: 0.5px solid var(--color-border-success); }
+    .feedback-block.ko { background: var(--color-background-danger); color: var(--color-text-danger); border: 0.5px solid var(--color-border-danger); }
+    .feedback-block.partial { background: var(--color-background-warning); color: var(--color-text-warning); border: 0.5px solid #FAC775; }
+    .feedback-label { font-weight: 500; margin-bottom: 4px; }
+    .btn-next { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 11px 20px; font-size: 15px; cursor: pointer; color: var(--color-text-primary); margin-top: 0.75rem; transition: background 0.1s; font-family: var(--font-sans); }
+    .btn-next:hover { background: var(--color-background-secondary); }
+    .score-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2rem; }
+    .score-card { background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 1rem; text-align: center; border: 0.5px solid var(--color-border-tertiary); }
+    .score-card .num { font-size: 28px; font-weight: 500; color: var(--color-text-primary); }
+    .score-card .lbl { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+    .verdict-block { padding: 1rem 1.25rem; border-radius: var(--border-radius-lg); margin-bottom: 1.5rem; font-size: 15px; line-height: 1.6; }
+    .verdict-block.excellent { background: var(--color-background-success); color: var(--color-text-success); }
+    .verdict-block.bien { background: var(--color-background-info); color: var(--color-text-info); }
+    .verdict-block.insuffisant { background: #FAECE7; color: #712B13; }
+    .erreurs-section { margin-bottom: 1.5rem; }
+    .erreurs-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.75rem; }
+    .erreur-item { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px 14px; margin-bottom: 8px; font-size: 13px; background: var(--color-background-primary); }
+    .erreur-q { color: var(--color-text-secondary); margin-bottom: 4px; }
+    .erreur-bonne { color: var(--color-text-success); font-weight: 500; }
+    .hist-section { margin-bottom: 1.5rem; }
+    .hist-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.75rem; }
+    .hist-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 13px; }
+    .hist-label { width: 90px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hist-bar-bg { flex: 1; height: 8px; background: var(--color-background-secondary); border-radius: 99px; }
+    .hist-bar-fill { height: 8px; border-radius: 99px; background: var(--blue-light); }
+    .hist-pct { width: 36px; text-align: right; color: var(--color-text-secondary); }
+    .btn-row { display: flex; gap: 10px; }
+    .btn-sec { flex: 1; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 13px 16px; font-size: 15px; cursor: pointer; color: var(--color-text-primary); text-align: center; transition: background 0.1s; }
+    .btn-sec:hover { background: var(--color-background-secondary); }
+    .btn-err { flex: 1; background: var(--blue); border: none; border-radius: var(--border-radius-md); padding: 13px 16px; font-size: 15px; cursor: pointer; color: #fff; font-weight: 500; text-align: center; }
+    .btn-err:hover { opacity: 0.88; }
+    .btn-err:disabled { opacity: 0.4; cursor: not-allowed; }
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 0.5rem; }
+    .mode-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; text-align: center; }
+    .mode-card.active { border: 2px solid var(--blue); background: var(--color-background-info); }
+    .mode-icon { font-size: 24px; color: var(--color-text-secondary); margin-bottom: 6px; }
+    .mode-card.active .mode-icon { color: var(--blue); }
+    .mode-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+    .mode-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
+    .mode-card.active .mode-desc { color: var(--color-text-info); }
+    .error-msg { color: var(--color-text-danger); font-size: 14px; background: var(--color-background-danger); border: 0.5px solid var(--color-border-danger); border-radius: var(--border-radius-md); padding: 12px 14px; margin-top: 1rem; }
+    .rapport-print { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; }
+    .rapport-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 1rem; }
+    .rapport-logo { font-size: 20px; font-weight: 600; color: var(--color-text-primary); letter-spacing: -0.5px; }
+    .rapport-logo span { color: var(--blue-light); }
+    .rapport-date { font-size: 12px; color: var(--color-text-secondary); }
+    .rapport-matiere { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 1rem; }
+    .rapport-score-wrap { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 1.25rem; }
+    .rapport-score-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.75rem; text-align: center; }
+    .rapport-score-box .rnum { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+    .rapport-score-box .rlbl { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+    .rapport-corps { font-size: 14px; color: var(--color-text-primary); line-height: 1.75; white-space: pre-wrap; margin-bottom: 1.25rem; }
+    .rapport-erreurs-titre { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 0.5rem; }
+    .rapport-erreur-row { font-size: 13px; color: var(--color-text-primary); padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); line-height: 1.5; }
+    .rapport-erreur-row:last-child { border-bottom: none; }
+    .rapport-erreur-q { color: var(--color-text-secondary); font-size: 12px; }
+    .rapport-erreur-r { color: var(--color-text-success); font-weight: 500; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREEN 0 : Clé API -->
+  <div id="screen-apikey" class="screen">
+    <div class="header" style="padding-top:0.5rem">
+      <div class="logo">Répéti<span>Teur</span></div>
+      <div class="subtitle">Prends une photo de ta leçon, et c'est parti !</div>
+    </div>
+    <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem">
+      <p style="font-size:14px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1rem">
+        Pour fonctionner, RepétiTeur a besoin d'une clé API Anthropic.<br>
+        Tu peux en obtenir une sur <a href="https://console.anthropic.com/settings/keys" style="color:var(--blue)">console.anthropic.com</a>.
+      </p>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…"
+        style="width:100%;padding:11px 13px;font-size:14px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);margin-bottom:0.5rem" />
+      <p style="font-size:12px;color:var(--color-text-tertiary)">
+        La clé est sauvegardée uniquement sur cet appareil et n'est jamais partagée.
+      </p>
+    </div>
+    <button class="btn-primary" onclick="validerAPIKey()">
+      <i class="ti ti-arrow-right" aria-hidden="true"></i> Continuer
+    </button>
+  </div>
+
+  <!-- SCREEN 1 : Upload -->
+  <div id="screen-upload" class="screen">
+    <div class="header">
+      <div class="logo">Répéti<span>Teur</span></div>
+      <div class="subtitle">Prends une photo de ta leçon, et c'est parti !</div>
+    </div>
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="dropZone">
+      <i class="ti ti-photo-scan" aria-hidden="true"></i>
+      <p><strong>Appuie ici</strong> pour choisir une photo de ta leçon</p>
+      <p style="font-size:13px;margin-top:8px;">JPG, PNG — jusqu'à 5 pages</p>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" multiple />
+    <div class="preview-wrap" id="previewWrap"></div>
+    <div id="configGrid" style="display:none">
+      <p style="font-size:13px;color:var(--color-text-secondary);margin:1.25rem 0 0.75rem;">Choisis ton mode de session :</p>
+      <div class="mode-grid">
+        <div class="mode-card active" id="modeRapide" onclick="selectMode('rapide')">
+          <div class="mode-icon"><i class="ti ti-bolt" aria-hidden="true"></i></div>
+          <div class="mode-title">Rapide</div>
+          <div class="mode-desc">15 questions · ~8 min<br>100 % QCM</div>
+        </div>
+        <div class="mode-card" id="modeIntense" onclick="selectMode('intense')">
+          <div class="mode-icon"><i class="ti ti-flame" aria-hidden="true"></i></div>
+          <div class="mode-title">Intense</div>
+          <div class="mode-desc">25 questions · ~15 min<br>dont 5 questions ⚡ difficiles</div>
+        </div>
+      </div>
+    </div>
+    <div id="uploadError"></div>
+    <button class="btn-primary" id="btnLancer" disabled onclick="lancerSession()">
+      <i class="ti ti-rocket" aria-hidden="true"></i> Lancer la session
+    </button>
+  </div>
+
+  <!-- SCREEN 2 : Loading -->
+  <div id="screen-loading" class="screen">
+    <div class="loading-block">
+      <div class="spinner"></div>
+      <p class="loading-text" id="loadingText">Analyse de la leçon en cours…</p>
+    </div>
+  </div>
+
+  <!-- SCREEN 3 : Question -->
+  <div id="screen-question" class="screen">
+    <div class="session-header">
+      <span class="matiere-badge" id="matiereBadge">Matière</span>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar" style="width:0%"></div>
+      </div>
+      <span class="progress-label" id="progressLabel">0 / 0</span>
+    </div>
+    <div class="question-card">
+      <div class="question-type" id="qType">QCM</div>
+      <div class="question-text" id="qText">…</div>
+      <div class="options-grid" id="optionsGrid"></div>
+      <div id="feedbackBlock"></div>
+    </div>
+    <button class="btn-next" id="btnNext" style="display:none" onclick="nextQuestion()">
+      Question suivante <i class="ti ti-arrow-right" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <!-- SCREEN 4 : Bilan -->
+  <div id="screen-bilan" class="screen">
+    <div style="margin-bottom:1.5rem">
+      <div style="font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px">Bilan de session</div>
+      <div style="font-size:13px;color:var(--color-text-secondary)" id="bilanMatiere">—</div>
+    </div>
+    <div class="score-summary">
+      <div class="score-card"><div class="num" id="scoreTotal">—</div><div class="lbl">Score</div></div>
+      <div class="score-card"><div class="num" id="scoreOk">—</div><div class="lbl">Correctes</div></div>
+      <div class="score-card"><div class="num" id="scoreKo">—</div><div class="lbl">Erreurs</div></div>
+    </div>
+    <div class="verdict-block" id="verdictBlock"></div>
+    <div class="erreurs-section" id="erreursSection"></div>
+    <div class="hist-section" id="histSection"></div>
+
+    <!-- Boutons actions -->
+    <div class="btn-row" style="margin-bottom:10px">
+      <div class="btn-sec" onclick="resetApp()" style="cursor:pointer">
+        <i class="ti ti-refresh" aria-hidden="true"></i> Nouvelle session
+      </div>
+      <div class="btn-err" id="btnRevoirErreurs" onclick="revoirErreurs()" style="display:none">
+        <i class="ti ti-repeat" aria-hidden="true"></i> Relancer sur les erreurs
+      </div>
+    </div>
+    <button class="btn-primary" id="btnRapport" onclick="afficherEcranRapport()" style="display:none;margin-top:0">
+      <i class="ti ti-file-analytics" aria-hidden="true"></i> Générer le rapport
+    </button>
+  </div>
+
+  <!-- SCREEN 5 : Rapport imprimable -->
+  <div id="screen-rapport" class="screen">
+    <div class="rapport-print" id="rapportPrint">
+      <div class="rapport-header">
+        <div class="rapport-logo">Répéti<span>Teur</span></div>
+        <div class="rapport-date" id="rapportDate"></div>
+      </div>
+      <div class="rapport-matiere" id="rapportMatiere"></div>
+      <div class="rapport-score-wrap" id="rapportScoreWrap"></div>
+      <div class="rapport-corps" id="rapportCorps"></div>
+      <div class="rapport-erreurs" id="rapportErreurs"></div>
+    </div>
+    <p style="font-size:12px;color:var(--color-text-tertiary);text-align:center;margin-top:1rem">
+      <i class="ti ti-camera" aria-hidden="true"></i> Prends une photo de ce rapport pour le garder
+    </p>
+    <div class="btn-row" style="margin-top:1rem">
+      <div class="btn-sec" onclick="showScreen('screen-bilan')" style="cursor:pointer">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i> Retour
+      </div>
+      <div class="btn-sec" onclick="resetApp()" style="cursor:pointer">
+        <i class="ti ti-refresh" aria-hidden="true"></i> Nouvelle session
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+let API_KEY = '';
+
+// Modes de session
+const MODES = {
+  rapide:  { total: 15, difficiles: 0 },
+  intense: { total: 25, difficiles: 5 }
+};
+let modeActuel = 'rapide';
+
+let imgBase64List = [], questions = [], currentIdx = 0, results = [];
+let matiereDetectee = '', titreLecon = '', errorOnlyMode = false;
+
+// ── Initialisation : clé API ─────────────────────────────────────────────
+(function init() {
+  try {
+    const saved = localStorage.getItem('repeti_apikey');
+    if (saved && saved.startsWith('sk-ant')) {
+      API_KEY = saved;
+      showScreen('screen-upload');
+      return;
+    }
+  } catch(e) {}
+  showScreen('screen-apikey');
+})();
+
+function validerAPIKey() {
+  const val = (document.getElementById('apiKeyInput').value || '').trim();
+  if (!val.startsWith('sk-ant')) {
+    alert('Clé invalide. Elle doit commencer par sk-ant-…');
+    return;
+  }
+  API_KEY = val;
+  try { localStorage.setItem('repeti_apikey', val); } catch(e) {}
+  showScreen('screen-upload');
+}
+
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', handleFiles);
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = 'var(--color-background-secondary)'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.style.background = ''; handleFiles({ target: { files: e.dataTransfer.files } }); });
+
+function selectMode(mode) {
+  modeActuel = mode;
+  document.getElementById('modeRapide').classList.toggle('active', mode === 'rapide');
+  document.getElementById('modeIntense').classList.toggle('active', mode === 'intense');
+}
+
+const MAX_B64_BYTES = 4.5 * 1024 * 1024; // 4.5 MB en octets réels (avant base64)
+const MAX_DIM = 2048;
+
+function compresserImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('Image illisible'));
+    img.onload = () => {
+      let w = img.width, h = img.height;
+
+      // Redimensionner si nécessaire
+      if (w > MAX_DIM || h > MAX_DIM) {
+        if (w >= h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+        else        { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+      // Compression progressive : on cible < 4.5 MB en données brutes
+      // base64 gonfle de ~33%, donc on cible length/1.37 < MAX_B64_BYTES
+      let quality = 0.88;
+      let out = canvas.toDataURL('image/jpeg', quality);
+      let rawBytes = Math.round(out.length / 1.37);
+
+      while (rawBytes > MAX_B64_BYTES && quality > 0.30) {
+        quality = Math.round((quality - 0.10) * 100) / 100;
+        out = canvas.toDataURL('image/jpeg', quality);
+        rawBytes = Math.round(out.length / 1.37);
+      }
+
+      resolve({ dataUrl: out, b64: out.split(',')[1], mime: 'image/jpeg' });
+    };
+    img.src = dataUrl;
+  });
+}
+
+function handleFiles(e) {
+  const files = Array.from(e.target.files || []).slice(0, 5);
+  if (files.length === 0) return;
+
+  imgBase64List = [];
+  document.getElementById('previewWrap').innerHTML = '';
+  document.getElementById('uploadError').innerHTML = '';
+  document.getElementById('btnLancer').disabled = true;
+  document.getElementById('configGrid').style.display = 'none';
+
+  let done = 0;
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onerror = () => {
+      document.getElementById('uploadError').innerHTML =
+        '<div class="error-msg"><i class="ti ti-alert-circle"></i> Impossible de lire ce fichier.</div>';
+      done++;
+    };
+    reader.onload = async ev => {
+      try {
+        const original = ev.target.result;
+        // On compresse TOUJOURS — les photos iPhone dépassent systématiquement 5 MB
+        const result = await compresserImage(original);
+
+        imgBase64List.push({ b64: result.b64, mime: result.mime });
+
+        const thumb = document.createElement('img');
+        thumb.src = result.dataUrl;
+        thumb.className = 'preview-img';
+        document.getElementById('previewWrap').appendChild(thumb);
+      } catch (err) {
+        document.getElementById('uploadError').innerHTML =
+          `<div class="error-msg"><i class="ti ti-alert-circle"></i> Erreur : ${err.message}</div>`;
+      } finally {
+        done++;
+        if (done === files.length && imgBase64List.length > 0) {
+          document.getElementById('configGrid').style.display = 'block';
+          document.getElementById('btnLancer').disabled = false;
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+async function lancerSession() {
+  errorOnlyMode = false;
+  showScreen('screen-loading');
+  document.getElementById('loadingText').textContent = 'Lecture de la leçon…';
+  try {
+    await genererQuestions();
+    demarrerSession();
+  } catch(err) {
+    showScreen('screen-upload');
+    document.getElementById('uploadError').innerHTML = `<div class="error-msg"><i class="ti ti-alert-circle"></i> Erreur : ${err.message}</div>`;
+  }
+}
+
+async function appelAPI(messages, maxTokens) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: maxTokens,
+      system: 'Tu es RepétiTeur. Tu génères des QCM uniquement et exclusivement à partir du contenu visible dans les images ou du texte explicitement fourni dans la conversation. Tu n\'utilises JAMAIS tes connaissances générales. Si tu n\'as pas de document, tu le dis.',
+      messages
+    })
+  });
+  if (!resp.ok) {
+    const e = await resp.json().catch(() => ({}));
+    throw new Error(e.error?.message || `Erreur API ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+}
+
+function extraireJSON(raw) {
+  try { return JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch {}
+  try {
+    const start = raw.indexOf('{'), end = raw.lastIndexOf('}');
+    if (start !== -1 && end !== -1) return JSON.parse(raw.slice(start, end + 1));
+  } catch {}
+  const match = raw.match(/\{[\s\S]*?"questions"\s*:\s*\[[\s\S]*?\]\s*\}/);
+  if (match) return JSON.parse(match[0]);
+  throw new Error('Format de réponse invalide — réessaie.');
+}
+
+async function genererQuestions() {
+  const m = MODES[modeActuel];
+
+  // ── TOUR 1 : Transcription avec les images ───────────────────────────────
+  document.getElementById('loadingText').textContent = 'Lecture du document…';
+
+  const tour1Messages = [{
+    role: 'user',
+    content: [
+      ...imgBase64List.map(img => ({
+        type: 'image',
+        source: { type: 'base64', media_type: img.mime, data: img.b64 }
+      })),
+      { type: 'text', text: `Transcris intégralement le texte de ce document (cours manuscrit ou imprimé).
+- Conserve tous les titres, sous-titres, listes, chiffres et exemples
+- Ne résume pas, ne reformule pas, n'ajoute rien de ta propre connaissance
+- Commence ta réponse par : "TRANSCRIPTION:" suivi du texte exact du document` }
+    ]
+  }];
+
+  const transcription = await appelAPI(tour1Messages, 4000);
+
+  if (!transcription || !transcription.includes('TRANSCRIPTION:') || transcription.length < 80) {
+    throw new Error('Le document n\'a pas pu être lu correctement. Vérifie la qualité de la photo.');
+  }
+
+  // ── TOUR 2 : QCM uniquement, ancré sur la transcription ─────────────────
+  document.getElementById('loadingText').textContent = 'Génération des questions…';
+
+  const texteTranscrit = transcription.replace(/^TRANSCRIPTION:\s*/i, '').trim();
+
+  const nbDifficiles = m.difficiles > 0 ? `\n- ${m.difficiles} questions doivent avoir "difficile":true : elles portent sur une nuance ou un chiffre précis du cours` : '';
+
+  const tour2Messages = [
+    ...tour1Messages,
+    { role: 'assistant', content: transcription },
+    { role: 'user', content: `Voici la transcription exacte du cours :
+
+"""
+${texteTranscrit}
+"""
+
+Génère exactement ${m.total} questions QCM pour réviser ce cours. Toutes les questions sont de type "qcm".${nbDifficiles}
+
+CONTRAINTE ABSOLUE SUR CHAQUE QUESTION :
+- La question doit porter sur un fait, un chiffre, un nom ou une définition qui apparaît MOT POUR MOT dans la transcription ci-dessus
+- La bonne réponse doit être un élément littéralement présent dans la transcription
+- Le champ "source" doit contenir la phrase exacte (copiée telle quelle) du cours qui prouve la bonne réponse
+- Si tu ne trouves pas de phrase exacte dans le cours pour justifier une question, NE L'ÉCRIS PAS
+- Zéro invention, zéro paraphrase approximative, zéro connaissance externe
+- Les 4 options doivent être plausibles mais seule la bonne réponse est dans le cours
+- Parle de "ton cours" dans les explications, jamais de "le document" ou "le texte"
+
+Réponds avec UNIQUEMENT ce JSON valide, sans texte avant ni après, sans backticks :
+{"matiere":"...","titre_lecon":"...","questions":[{"id":1,"type":"qcm","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"bonne_reponse":"A","explication":"...","source":"phrase copiée mot pour mot depuis la transcription","difficile":false}]}` }
+  ];
+
+  const raw = await appelAPI(tour2Messages, 6000);
+  const parsed = extraireJSON(raw);
+
+  matiereDetectee = parsed.matiere || 'Cours';
+  titreLecon      = parsed.titre_lecon || '';
+
+  // ── Validation stricte : source doit matcher la transcription ────────────
+  document.getElementById('loadingText').textContent = 'Vérification des questions…';
+
+  const texteNorm = texteTranscrit.toLowerCase().replace(/\s+/g, ' ');
+
+  function sourceValide(q) {
+    if (!q.source || q.source.trim().length < 8) return false;
+    // Prendre les 4 premiers mots de la source et vérifier présence dans transcription
+    const mots = q.source.toLowerCase().replace(/\s+/g, ' ').trim().split(' ');
+    // Tester plusieurs fenêtres de 4 mots dans la source
+    for (let i = 0; i <= mots.length - 4; i++) {
+      const fragment = mots.slice(i, i + 4).join(' ');
+      if (fragment.length > 10 && texteNorm.includes(fragment)) return true;
+    }
+    return false;
+  }
+
+  const validees = (parsed.questions || []).filter(q => q.type === 'qcm' && sourceValide(q));
+
+  // Si moins de 50% passent la validation → on garde tout (évite session vide)
+  questions = validees.length >= Math.ceil(m.total * 0.5) ? validees : (parsed.questions || []).filter(q => q.type === 'qcm');
+
+  if (questions.length === 0) throw new Error('Aucune question générée. Réessaie.');
+}
+
+function demarrerSession() {
+  currentIdx = 0; results = [];
+  showScreen('screen-question');
+  afficherQuestion();
+}
+
+function afficherQuestion() {
+  const q = questions[currentIdx], total = questions.length;
+  document.getElementById('matiereBadge').textContent = matiereDetectee;
+  document.getElementById('progressBar').style.width = Math.round((currentIdx / total) * 100) + '%';
+  document.getElementById('progressLabel').textContent = `${currentIdx + 1} / ${total}`;
+  document.getElementById('qType').textContent = q.difficile ? '⚡ Question difficile' : 'QCM';
+  document.getElementById('qText').textContent = q.question;
+  document.getElementById('feedbackBlock').innerHTML = '';
+  document.getElementById('btnNext').style.display = 'none';
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn'; btn.textContent = opt;
+    btn.onclick = () => corrigerQCM(btn, opt, q);
+    grid.appendChild(btn);
+  });
+}
+
+function corrigerQCM(clickedBtn, choix, q) {
+  const lettre = choix.trim().charAt(0), correct = lettre === q.bonne_reponse;
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    const l = b.textContent.trim().charAt(0);
+    if (l === q.bonne_reponse) b.classList.add('correct');
+    else if (b === clickedBtn && !correct) b.classList.add('wrong');
+  });
+  results.push({ q, correct, score: correct ? 1 : 0 });
+  document.getElementById('feedbackBlock').innerHTML = correct
+    ? `<div class="feedback-block ok"><div class="feedback-label">✓ Correct</div>${q.explication}</div>`
+    : `<div class="feedback-block ko"><div class="feedback-label">✗ Raté</div>${q.explication}</div>`;
+  document.getElementById('btnNext').style.display = 'inline-block';
+}
+
+function nextQuestion() {
+  currentIdx++;
+  if (currentIdx >= questions.length) afficherBilan(); else afficherQuestion();
+}
+
+function afficherBilan() {
+  showScreen('screen-bilan');
+  const total    = results.length;
+  const corrects = results.filter(r => r.correct).length;
+  const erreurs  = results.filter(r => !r.correct);
+  const pct      = Math.round((corrects / total) * 100);
+
+  document.getElementById('bilanMatiere').textContent = `${matiereDetectee}${titreLecon ? ' — ' + titreLecon : ''}`;
+  document.getElementById('scoreTotal').textContent = pct + '%';
+  document.getElementById('scoreOk').textContent    = corrects;
+  document.getElementById('scoreKo').textContent    = total - corrects;
+
+  const v = document.getElementById('verdictBlock');
+  let cls, msg;
+  if      (pct >= 70) { cls = 'excellent';   msg = `${pct} % — objectif atteint ! Génère ton rapport ci-dessous.`; }
+  else if (pct >= 55) { cls = 'bien';         msg = `${pct} % — presque ! Relance sur les erreurs pour dépasser 70 %.`; }
+  else                { cls = 'insuffisant';  msg = `${pct} % — il faut retravailler ces notions. Relance sur les erreurs.`; }
+  v.className   = `verdict-block ${cls}`;
+  v.textContent = msg;
+
+  // Bouton relancer sur erreurs — toujours visible s'il y a des erreurs
+  const btnRelance = document.getElementById('btnRevoirErreurs');
+  if (erreurs.length > 0) {
+    btnRelance.style.display = '';
+    btnRelance.disabled = false;
+  } else {
+    btnRelance.style.display = 'none';
+  }
+
+  // Bouton rapport — visible seulement si ≥ 70 %
+  document.getElementById('btnRapport').style.display = pct >= 70 ? 'block' : 'none';
+
+  // Liste des erreurs
+  const es = document.getElementById('erreursSection');
+  if (erreurs.length > 0) {
+    let html = `<div class="erreurs-title"><i class="ti ti-x" aria-hidden="true"></i> Points à retravailler (${erreurs.length})</div>`;
+    erreurs.forEach(r => {
+      const b = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
+      html += `<div class="erreur-item"><div class="erreur-q">${r.q.question}</div><div class="erreur-bonne">→ ${b}</div></div>`;
+    });
+    es.innerHTML = html;
+  } else { es.innerHTML = ''; }
+
+  document.getElementById('histSection').innerHTML = '';
+
+  // Pré-calculer les données du rapport en arrière-plan (sans afficher l'écran)
+  preparerDonneesRapport(pct, corrects, total, erreurs);
+}
+
+let rapportPretData = null; // stocke les données une fois le rapport prêt
+
+async function preparerDonneesRapport(pct, corrects, total, erreurs) {
+  rapportPretData = null; // reset
+
+  const erreursDesc = erreurs.map(r => {
+    const bonne = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
+    return `- "${r.q.question}" → ${bonne} (${r.q.explication})`;
+  }).join('\n');
+
+  const note20 = Math.round((pct / 100) * 20);
+
+  const prompt = erreurs.length === 0
+    ? `L'élève a obtenu ${pct}% (${corrects}/${total}) à une session QCM sur "${matiereDetectee} — ${titreLecon}". Score parfait.
+Rédige 4 lignes de félicitations en tutoyant l'élève. Mentionne "ton cours". Encourage à maintenir ce niveau.`
+    : `L'élève a obtenu ${pct}% (${corrects}/${total}) à une session QCM sur "${matiereDetectee} — ${titreLecon}". Note : ${note20}/20.
+
+Erreurs commises :
+${erreursDesc}
+
+Rédige un rapport de session (max 12 lignes) en tutoyant l'élève :
+1. Commence par la note : "Tu obtiens ${note20}/20."
+2. Pour chaque erreur : une règle courte et mémorisable à retenir (pas de liste à puces, phrases directes)
+3. Termine par un conseil concret pour la prochaine session
+
+Utilise "ton cours" et non "le document". Sois direct et bienveillant.`;
+
+  try {
+    const texte = await appelAPI([{ role: 'user', content: prompt }], 800);
+    rapportPretData = { pct, corrects, total, erreurs, texte: texte.trim() };
+  } catch {
+    rapportPretData = { pct, corrects, total, erreurs, texte: `Tu obtiens ${note20}/20 (${pct} %).\n${erreurs.length > 0 ? `${erreurs.length} erreur(s) à retravailler.` : 'Excellent travail !'}` };
+  }
+}
+
+function afficherEcranRapport() {
+  showScreen('screen-rapport');
+
+  const now  = new Date();
+  const date = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+  document.getElementById('rapportDate').textContent    = date;
+  document.getElementById('rapportMatiere').textContent = `${matiereDetectee}${titreLecon ? ' — ' + titreLecon : ''}`;
+
+  // Scores
+  const pct      = rapportPretData ? rapportPretData.pct      : parseInt(document.getElementById('scoreTotal').textContent);
+  const corrects = rapportPretData ? rapportPretData.corrects  : parseInt(document.getElementById('scoreOk').textContent);
+  const total    = rapportPretData ? rapportPretData.total     : corrects + parseInt(document.getElementById('scoreKo').textContent);
+  const note20   = Math.round((pct / 100) * 20);
+
+  document.getElementById('rapportScoreWrap').innerHTML = `
+    <div class="rapport-score-box"><div class="rnum">${note20}/20</div><div class="rlbl">Note</div></div>
+    <div class="rapport-score-box"><div class="rnum">${pct}%</div><div class="rlbl">Score</div></div>
+    <div class="rapport-score-box"><div class="rnum">${corrects}/${total}</div><div class="rlbl">Bonnes réponses</div></div>`;
+
+  // Texte du rapport
+  const corpsEl = document.getElementById('rapportCorps');
+  if (rapportPretData && rapportPretData.texte) {
+    corpsEl.textContent = rapportPretData.texte;
+  } else {
+    corpsEl.textContent = 'Rapport en cours de génération…';
+    // Polling si pas encore prêt
+    const wait = setInterval(() => {
+      if (rapportPretData) {
+        corpsEl.textContent = rapportPretData.texte;
+        clearInterval(wait);
+      }
+    }, 500);
+  }
+
+  // Erreurs dans le rapport
+  const erreurs = rapportPretData ? rapportPretData.erreurs : [];
+  const erreursEl = document.getElementById('rapportErreurs');
+  if (erreurs.length > 0) {
+    let html = `<div class="rapport-erreurs-titre">Questions ratées</div>`;
+    erreurs.forEach(r => {
+      const b = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
+      html += `<div class="rapport-erreur-row">
+        <div class="rapport-erreur-q">${r.q.question}</div>
+        <div class="rapport-erreur-r">→ ${b}</div>
+      </div>`;
+    });
+    erreursEl.innerHTML = html;
+  } else {
+    erreursEl.innerHTML = '';
+  }
+}
+
+function revoirErreurs() {
+  const erreurs=results.filter(r=>!r.correct);
+  if(erreurs.length===0) return;
+  errorOnlyMode=true; questions=erreurs.map(r=>r.q); demarrerSession();
+}
+
+function resetApp() {
+  imgBase64List=[]; questions=[]; currentIdx=0; results=[];
+  document.getElementById('previewWrap').innerHTML='';
+  document.getElementById('configGrid').style.display='none';
+  document.getElementById('btnLancer').disabled=true;
+  document.getElementById('uploadError').innerHTML='';
+  fileInput.value='';
+  showScreen('screen-upload');
+}
+</script>
+</body>
+</html>
