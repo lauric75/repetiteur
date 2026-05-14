@@ -119,51 +119,18 @@
     .mode-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
     .mode-card.active .mode-desc { color: var(--color-text-info); }
     .error-msg { color: var(--color-text-danger); font-size: 14px; background: var(--color-background-danger); border: 0.5px solid var(--color-border-danger); border-radius: var(--border-radius-md); padding: 12px 14px; margin-top: 1rem; }
-    .rapport-print { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; }
-    .rapport-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 1rem; }
-    .rapport-logo { font-size: 20px; font-weight: 600; color: var(--color-text-primary); letter-spacing: -0.5px; }
-    .rapport-logo span { color: var(--blue-light); }
-    .rapport-date { font-size: 12px; color: var(--color-text-secondary); }
-    .rapport-matiere { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 1rem; }
-    .rapport-score-wrap { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 1.25rem; }
-    .rapport-score-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.75rem; text-align: center; }
-    .rapport-score-box .rnum { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
-    .rapport-score-box .rlbl { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
-    .rapport-corps { font-size: 14px; color: var(--color-text-primary); line-height: 1.75; white-space: pre-wrap; margin-bottom: 1.25rem; }
-    .rapport-erreurs-titre { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 0.5rem; }
-    .rapport-erreur-row { font-size: 13px; color: var(--color-text-primary); padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); line-height: 1.5; }
-    .rapport-erreur-row:last-child { border-bottom: none; }
-    .rapport-erreur-q { color: var(--color-text-secondary); font-size: 12px; }
-    .rapport-erreur-r { color: var(--color-text-success); font-weight: 500; }
+    .rapport-block { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+    .rapport-titre { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+    .rapport-texte { font-size: 14px; color: var(--color-text-primary); line-height: 1.7; white-space: pre-wrap; }
+    .relance-block { background: var(--color-background-warning); border: 0.5px solid #FAC775; border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; font-size: 14px; color: var(--color-text-warning); line-height: 1.6; }
+    .relance-block strong { font-weight: 500; display: block; margin-bottom: 4px; }
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- SCREEN 0 : Clé API -->
-  <div id="screen-apikey" class="screen">
-    <div class="header" style="padding-top:0.5rem">
-      <div class="logo">Répéti<span>Teur</span></div>
-      <div class="subtitle">Prends une photo de ta leçon, et c'est parti !</div>
-    </div>
-    <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem">
-      <p style="font-size:14px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1rem">
-        Pour fonctionner, RepétiTeur a besoin d'une clé API Anthropic.<br>
-        Tu peux en obtenir une sur <a href="https://console.anthropic.com/settings/keys" style="color:var(--blue)">console.anthropic.com</a>.
-      </p>
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…"
-        style="width:100%;padding:11px 13px;font-size:14px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);margin-bottom:0.5rem" />
-      <p style="font-size:12px;color:var(--color-text-tertiary)">
-        La clé est sauvegardée uniquement sur cet appareil et n'est jamais partagée.
-      </p>
-    </div>
-    <button class="btn-primary" onclick="validerAPIKey()">
-      <i class="ti ti-arrow-right" aria-hidden="true"></i> Continuer
-    </button>
-  </div>
-
   <!-- SCREEN 1 : Upload -->
-  <div id="screen-upload" class="screen">
+  <div id="screen-upload" class="screen active">
     <div class="header">
       <div class="logo">Répéti<span>Teur</span></div>
       <div class="subtitle">Prends une photo de ta leçon, et c'est parti !</div>
@@ -177,7 +144,7 @@
     <div class="preview-wrap" id="previewWrap"></div>
     <div id="configGrid" style="display:none">
       <p style="font-size:13px;color:var(--color-text-secondary);margin:1.25rem 0 0.75rem;">Choisis ton mode de session :</p>
-      <div class="mode-grid">
+      <div class="mode-grid" style="grid-template-columns:1fr 1fr 1fr">
         <div class="mode-card active" id="modeRapide" onclick="selectMode('rapide')">
           <div class="mode-icon"><i class="ti ti-bolt" aria-hidden="true"></i></div>
           <div class="mode-title">Rapide</div>
@@ -187,6 +154,11 @@
           <div class="mode-icon"><i class="ti ti-flame" aria-hidden="true"></i></div>
           <div class="mode-title">Intense</div>
           <div class="mode-desc">25 questions · ~15 min<br>dont 5 questions ⚡ difficiles</div>
+        </div>
+        <div class="mode-card" id="modeTest" onclick="selectMode('test')">
+          <div class="mode-icon"><i class="ti ti-player-play" aria-hidden="true"></i></div>
+          <div class="mode-title">Test</div>
+          <div class="mode-desc">3 questions · ~2 min<br>vérification express</div>
         </div>
       </div>
     </div>
@@ -236,85 +208,37 @@
       <div class="score-card"><div class="num" id="scoreKo">—</div><div class="lbl">Erreurs</div></div>
     </div>
     <div class="verdict-block" id="verdictBlock"></div>
+    <div class="relance-block" id="relanceBlock" style="display:none"></div>
+    <div class="rapport-block" id="rapportBlock" style="display:none">
+      <div class="rapport-titre"><i class="ti ti-file-text" aria-hidden="true"></i> Rapport de session</div>
+      <div class="rapport-texte" id="rapportTexte"></div>
+    </div>
     <div class="erreurs-section" id="erreursSection"></div>
     <div class="hist-section" id="histSection"></div>
-
-    <!-- Boutons actions -->
-    <div class="btn-row" style="margin-bottom:10px">
+    <div class="btn-row">
       <div class="btn-sec" onclick="resetApp()" style="cursor:pointer">
         <i class="ti ti-refresh" aria-hidden="true"></i> Nouvelle session
       </div>
-      <div class="btn-err" id="btnRevoirErreurs" onclick="revoirErreurs()" style="display:none">
-        <i class="ti ti-repeat" aria-hidden="true"></i> Relancer sur les erreurs
-      </div>
-    </div>
-    <button class="btn-primary" id="btnRapport" onclick="afficherEcranRapport()" style="display:none;margin-top:0">
-      <i class="ti ti-file-analytics" aria-hidden="true"></i> Générer le rapport
-    </button>
-  </div>
-
-  <!-- SCREEN 5 : Rapport imprimable -->
-  <div id="screen-rapport" class="screen">
-    <div class="rapport-print" id="rapportPrint">
-      <div class="rapport-header">
-        <div class="rapport-logo">Répéti<span>Teur</span></div>
-        <div class="rapport-date" id="rapportDate"></div>
-      </div>
-      <div class="rapport-matiere" id="rapportMatiere"></div>
-      <div class="rapport-score-wrap" id="rapportScoreWrap"></div>
-      <div class="rapport-corps" id="rapportCorps"></div>
-      <div class="rapport-erreurs" id="rapportErreurs"></div>
-    </div>
-    <p style="font-size:12px;color:var(--color-text-tertiary);text-align:center;margin-top:1rem">
-      <i class="ti ti-camera" aria-hidden="true"></i> Prends une photo de ce rapport pour le garder
-    </p>
-    <div class="btn-row" style="margin-top:1rem">
-      <div class="btn-sec" onclick="showScreen('screen-bilan')" style="cursor:pointer">
-        <i class="ti ti-arrow-left" aria-hidden="true"></i> Retour
-      </div>
-      <div class="btn-sec" onclick="resetApp()" style="cursor:pointer">
-        <i class="ti ti-refresh" aria-hidden="true"></i> Nouvelle session
+      <div class="btn-err" id="btnRevoirErreurs" onclick="revoirErreurs()">
+        <i class="ti ti-repeat" aria-hidden="true"></i> Revoir les erreurs
       </div>
     </div>
   </div>
 
 </div>
 <script>
-let API_KEY = '';
+const API_KEY = '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';
 
 // Modes de session
 const MODES = {
   rapide:  { total: 15, difficiles: 0 },
-  intense: { total: 25, difficiles: 5 }
+  intense: { total: 25, difficiles: 5 },
+  test:    { total: 3,  difficiles: 0 }
 };
 let modeActuel = 'rapide';
 
 let imgBase64List = [], questions = [], currentIdx = 0, results = [];
 let matiereDetectee = '', titreLecon = '', errorOnlyMode = false;
-
-// ── Initialisation : clé API ─────────────────────────────────────────────
-(function init() {
-  try {
-    const saved = localStorage.getItem('repeti_apikey');
-    if (saved && saved.startsWith('sk-ant')) {
-      API_KEY = saved;
-      showScreen('screen-upload');
-      return;
-    }
-  } catch(e) {}
-  showScreen('screen-apikey');
-})();
-
-function validerAPIKey() {
-  const val = (document.getElementById('apiKeyInput').value || '').trim();
-  if (!val.startsWith('sk-ant')) {
-    alert('Clé invalide. Elle doit commencer par sk-ant-…');
-    return;
-  }
-  API_KEY = val;
-  try { localStorage.setItem('repeti_apikey', val); } catch(e) {}
-  showScreen('screen-upload');
-}
 
 const fileInput = document.getElementById('fileInput');
 fileInput.addEventListener('change', handleFiles);
@@ -327,6 +251,7 @@ function selectMode(mode) {
   modeActuel = mode;
   document.getElementById('modeRapide').classList.toggle('active', mode === 'rapide');
   document.getElementById('modeIntense').classList.toggle('active', mode === 'intense');
+  document.getElementById('modeTest').classList.toggle('active', mode === 'test');
 }
 
 const MAX_B64_BYTES = 4.5 * 1024 * 1024; // 4.5 MB en octets réels (avant base64)
@@ -433,11 +358,13 @@ async function lancerSession() {
 }
 
 async function appelAPI(messages, maxTokens) {
+  // Nettoyer la clé : garder uniquement les caractères ASCII imprimables (32-126)
+  const cleanKey = API_KEY.replace(/[^\x20-\x7E]/g, '').trim();
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
+      'x-api-key': cleanKey,
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true'
     },
@@ -520,8 +447,12 @@ CONTRAINTE ABSOLUE SUR CHAQUE QUESTION :
 - Les 4 options doivent être plausibles mais seule la bonne réponse est dans le cours
 - Parle de "ton cours" dans les explications, jamais de "le document" ou "le texte"
 
+RÈGLE CRITIQUE SUR LES OPTIONS :
+- Mélange ALÉATOIREMENT l'ordre des 4 options de chaque question. La bonne réponse ne doit PAS être systématiquement en première position (pas toujours en A).
+- Utilise "bonne_reponse_texte" : copie EXACTEMENT le texte de la bonne option, sans le préfixe A./B./C./D.
+
 Réponds avec UNIQUEMENT ce JSON valide, sans texte avant ni après, sans backticks :
-{"matiere":"...","titre_lecon":"...","questions":[{"id":1,"type":"qcm","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"bonne_reponse":"A","explication":"...","source":"phrase copiée mot pour mot depuis la transcription","difficile":false}]}` }
+{"matiere":"...","titre_lecon":"...","questions":[{"id":1,"type":"qcm","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"bonne_reponse_texte":"texte exact de la bonne réponse sans A./B./C./D.","explication":"...","source":"phrase copiée mot pour mot depuis la transcription","difficile":false}]}` }
   ];
 
   const raw = await appelAPI(tour2Messages, 6000);
@@ -550,9 +481,37 @@ Réponds avec UNIQUEMENT ce JSON valide, sans texte avant ni après, sans backti
   const validees = (parsed.questions || []).filter(q => q.type === 'qcm' && sourceValide(q));
 
   // Si moins de 50% passent la validation → on garde tout (évite session vide)
-  questions = validees.length >= Math.ceil(m.total * 0.5) ? validees : (parsed.questions || []).filter(q => q.type === 'qcm');
+  let brutes = validees.length >= Math.ceil(m.total * 0.5) ? validees : (parsed.questions || []).filter(q => q.type === 'qcm');
 
-  if (questions.length === 0) throw new Error('Aucune question générée. Réessaie.');
+  if (brutes.length === 0) throw new Error('Aucune question générée. Réessaie.');
+
+  // ── CORRECTIF BUG : mélange des options côté client (double sécurité) ──────
+  // Claude place parfois la bonne réponse en A. On mélange et on identifie
+  // la bonne réponse par son TEXTE, pas sa position.
+  function shuffleArr(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  questions = brutes.map(q => {
+    // Extraire les textes bruts (sans "A. ", "B. "...)
+    const rawOpts = q.options.map(o => o.replace(/^[A-D]\.\s*/, '').trim());
+    // Identifier la bonne réponse par texte
+    const bonTexte = (q.bonne_reponse_texte || '').trim();
+    // Mélanger
+    const shuffled = shuffleArr(rawOpts);
+    // Ré-étiqueter A/B/C/D
+    const labels = ['A', 'B', 'C', 'D'];
+    const newOptions = shuffled.map((t, i) => `${labels[i]}. ${t}`);
+    // Trouver la nouvelle lettre de la bonne réponse
+    const newIdx = shuffled.findIndex(t => t === bonTexte);
+    const newLetter = newIdx >= 0 ? labels[newIdx] : labels[0];
+    return { ...q, options: newOptions, bonne_reponse: newLetter, bonne_reponse_texte: bonTexte };
+  });
 }
 
 function demarrerSession() {
@@ -602,7 +561,7 @@ function nextQuestion() {
 
 function afficherBilan() {
   showScreen('screen-bilan');
-  const total    = results.length;
+  const total = results.length;
   const corrects = results.filter(r => r.correct).length;
   const erreurs  = results.filter(r => !r.correct);
   const pct      = Math.round((corrects / total) * 100);
@@ -614,30 +573,38 @@ function afficherBilan() {
 
   const v = document.getElementById('verdictBlock');
   let cls, msg;
-  if      (pct >= 70) { cls = 'excellent';   msg = `${pct} % — objectif atteint ! Génère ton rapport ci-dessous.`; }
-  else if (pct >= 55) { cls = 'bien';         msg = `${pct} % — presque ! Relance sur les erreurs pour dépasser 70 %.`; }
-  else                { cls = 'insuffisant';  msg = `${pct} % — il faut retravailler ces notions. Relance sur les erreurs.`; }
-  v.className   = `verdict-block ${cls}`;
+  if (pct >= 70)      { cls = 'excellent'; msg = `${pct} % — objectif atteint ! Consulte le rapport ci-dessous pour consolider.`; }
+  else if (pct >= 55) { cls = 'bien';      msg = `${pct} % — presque ! Encore un effort sur les erreurs.`; }
+  else                { cls = 'insuffisant'; msg = `${pct} % — moins de 70 % de bonnes réponses. La session va se relancer sur tes erreurs.`; }
+  v.className = `verdict-block ${cls}`;
   v.textContent = msg;
 
-  // Bouton relancer sur erreurs — toujours visible s'il y a des erreurs
-  const btnRelance = document.getElementById('btnRevoirErreurs');
-  if (erreurs.length > 0) {
-    btnRelance.style.display = '';
-    btnRelance.disabled = false;
+  // ── Relance automatique si < 70 % ────────────────────────────────────────
+  const relanceEl = document.getElementById('relanceBlock');
+  if (pct < 70 && erreurs.length > 0) {
+    relanceEl.style.display = 'block';
+    relanceEl.innerHTML = `<strong>⚡ Relance automatique</strong>
+Tu as ${erreurs.length} erreur(s) sur ${total} questions (${100 - pct} %). L'objectif est 70 % minimum. Les questions ratées vont se relancer dans 5 secondes…`;
+    document.getElementById('btnRevoirErreurs').style.display = 'none';
+    setTimeout(() => {
+      errorOnlyMode = true;
+      questions = erreurs.map(r => r.q);
+      demarrerSession();
+    }, 5000);
   } else {
-    btnRelance.style.display = 'none';
+    relanceEl.style.display = 'none';
+    document.getElementById('btnRevoirErreurs').style.display = '';
+    document.getElementById('btnRevoirErreurs').disabled = erreurs.length === 0;
   }
 
-  // Bouton rapport — visible seulement si ≥ 70 %
-  document.getElementById('btnRapport').style.display = pct >= 70 ? 'block' : 'none';
-
-  // Liste des erreurs
+  // ── Liste des erreurs ─────────────────────────────────────────────────────
   const es = document.getElementById('erreursSection');
   if (erreurs.length > 0) {
     let html = `<div class="erreurs-title"><i class="ti ti-x" aria-hidden="true"></i> Points à retravailler (${erreurs.length})</div>`;
     erreurs.forEach(r => {
-      const b = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
+      const b = r.q.type === 'qcm'
+        ? r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse
+        : r.q.reponse_attendue;
       html += `<div class="erreur-item"><div class="erreur-q">${r.q.question}</div><div class="erreur-bonne">→ ${b}</div></div>`;
     });
     es.innerHTML = html;
@@ -645,94 +612,42 @@ function afficherBilan() {
 
   document.getElementById('histSection').innerHTML = '';
 
-  // Pré-calculer les données du rapport en arrière-plan (sans afficher l'écran)
-  preparerDonneesRapport(pct, corrects, total, erreurs);
+  // ── Rapport IA ────────────────────────────────────────────────────────────
+  genererRapport(pct, corrects, total, erreurs);
 }
 
-let rapportPretData = null; // stocke les données une fois le rapport prêt
-
-async function preparerDonneesRapport(pct, corrects, total, erreurs) {
-  rapportPretData = null; // reset
+async function genererRapport(pct, corrects, total, erreurs) {
+  const rapportBlock = document.getElementById('rapportBlock');
+  const rapportTexte = document.getElementById('rapportTexte');
+  rapportBlock.style.display = 'block';
+  rapportTexte.textContent   = 'Génération du rapport…';
 
   const erreursDesc = erreurs.map(r => {
-    const bonne = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
-    return `- "${r.q.question}" → ${bonne} (${r.q.explication})`;
+    const bonne = r.q.type === 'qcm'
+      ? r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse
+      : r.q.reponse_attendue;
+    return `- Question : ${r.q.question}\n  Bonne réponse : ${bonne}\n  Explication : ${r.q.explication}`;
   }).join('\n');
 
-  const note20 = Math.round((pct / 100) * 20);
-
   const prompt = erreurs.length === 0
-    ? `L'élève a obtenu ${pct}% (${corrects}/${total}) à une session QCM sur "${matiereDetectee} — ${titreLecon}". Score parfait.
-Rédige 4 lignes de félicitations en tutoyant l'élève. Mentionne "ton cours". Encourage à maintenir ce niveau.`
-    : `L'élève a obtenu ${pct}% (${corrects}/${total}) à une session QCM sur "${matiereDetectee} — ${titreLecon}". Note : ${note20}/20.
+    ? `L'élève a eu ${pct}% (${corrects}/${total}) — score parfait ou presque. Rédige un bref rapport de félicitations (5 lignes max) en le tutoyant, en mentionnant "ton cours" et en encourageant à maintenir ce niveau.`
+    : `L'élève a eu ${pct}% (${corrects}/${total} bonnes réponses) à une session de révision sur "${matiereDetectee} — ${titreLecon}".
 
-Erreurs commises :
+Voici les erreurs commises :
 ${erreursDesc}
 
-Rédige un rapport de session (max 12 lignes) en tutoyant l'élève :
-1. Commence par la note : "Tu obtiens ${note20}/20."
-2. Pour chaque erreur : une règle courte et mémorisable à retenir (pas de liste à puces, phrases directes)
-3. Termine par un conseil concret pour la prochaine session
+Rédige un rapport de session court (12 lignes max) en tutoyant l'élève, avec :
+1. Une note en intro (ex: "Tu obtiens X/20")
+2. Les erreurs-clés à ne plus commettre, formulées comme des règles mémorisables (pas de liste à puces, phrases courtes)
+3. Un conseil final pour progresser
 
-Utilise "ton cours" et non "le document". Sois direct et bienveillant.`;
+Parle de "ton cours", pas de "document". Sois direct, bienveillant, sans condescendance.`;
 
   try {
-    const texte = await appelAPI([{ role: 'user', content: prompt }], 800);
-    rapportPretData = { pct, corrects, total, erreurs, texte: texte.trim() };
+    const raw = await appelAPI([{ role: 'user', content: prompt }], 800);
+    rapportTexte.textContent = raw.trim();
   } catch {
-    rapportPretData = { pct, corrects, total, erreurs, texte: `Tu obtiens ${note20}/20 (${pct} %).\n${erreurs.length > 0 ? `${erreurs.length} erreur(s) à retravailler.` : 'Excellent travail !'}` };
-  }
-}
-
-function afficherEcranRapport() {
-  showScreen('screen-rapport');
-
-  const now  = new Date();
-  const date = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-  document.getElementById('rapportDate').textContent    = date;
-  document.getElementById('rapportMatiere').textContent = `${matiereDetectee}${titreLecon ? ' — ' + titreLecon : ''}`;
-
-  // Scores
-  const pct      = rapportPretData ? rapportPretData.pct      : parseInt(document.getElementById('scoreTotal').textContent);
-  const corrects = rapportPretData ? rapportPretData.corrects  : parseInt(document.getElementById('scoreOk').textContent);
-  const total    = rapportPretData ? rapportPretData.total     : corrects + parseInt(document.getElementById('scoreKo').textContent);
-  const note20   = Math.round((pct / 100) * 20);
-
-  document.getElementById('rapportScoreWrap').innerHTML = `
-    <div class="rapport-score-box"><div class="rnum">${note20}/20</div><div class="rlbl">Note</div></div>
-    <div class="rapport-score-box"><div class="rnum">${pct}%</div><div class="rlbl">Score</div></div>
-    <div class="rapport-score-box"><div class="rnum">${corrects}/${total}</div><div class="rlbl">Bonnes réponses</div></div>`;
-
-  // Texte du rapport
-  const corpsEl = document.getElementById('rapportCorps');
-  if (rapportPretData && rapportPretData.texte) {
-    corpsEl.textContent = rapportPretData.texte;
-  } else {
-    corpsEl.textContent = 'Rapport en cours de génération…';
-    // Polling si pas encore prêt
-    const wait = setInterval(() => {
-      if (rapportPretData) {
-        corpsEl.textContent = rapportPretData.texte;
-        clearInterval(wait);
-      }
-    }, 500);
-  }
-
-  // Erreurs dans le rapport
-  const erreurs = rapportPretData ? rapportPretData.erreurs : [];
-  const erreursEl = document.getElementById('rapportErreurs');
-  if (erreurs.length > 0) {
-    let html = `<div class="rapport-erreurs-titre">Questions ratées</div>`;
-    erreurs.forEach(r => {
-      const b = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
-      html += `<div class="rapport-erreur-row">
-        <div class="rapport-erreur-q">${r.q.question}</div>
-        <div class="rapport-erreur-r">→ ${b}</div>
-      </div>`;
-    });
-    erreursEl.innerHTML = html;
-  } else {
-    erreursEl.innerHTML = '';
+    rapportTexte.textContent = `Score : ${pct} % (${corrects}/${total})\n${erreurs.length > 0 ? `${erreurs.length} erreur(s) à retravailler.` : 'Excellent travail !'}`;
   }
 }
 
