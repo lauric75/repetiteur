@@ -129,11 +129,43 @@
 <body>
 <div id="app">
 
+  <!-- SCREEN 0 : Clé API -->
+  <div id="screen-apikey" class="screen active">
+    <div class="header">
+      <div class="logo">Répéti<span>Teur</span></div>
+      <div class="subtitle">Saisis ta clé API pour commencer</div>
+    </div>
+    <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.5rem;">
+      <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:1rem;line-height:1.6;">
+        RepétiTeur utilise l'API Anthropic pour lire tes cours et générer des questions.<br>
+        Ta clé est sauvegardée sur cet appareil — tu n'auras à la saisir qu'<strong>une seule fois</strong>.
+      </p>
+      <label style="font-size:12px;color:var(--color-text-secondary);display:block;margin-bottom:6px;">Clé API Anthropic</label>
+      <input type="password" id="apikeyInput" placeholder="sk-ant-api03-…"
+        style="width:100%;padding:12px 14px;font-size:15px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary);font-family:var(--font-sans);outline:none;margin-bottom:0.5rem;"
+        onkeydown="if(event.key==='Enter')sauvegarderCle()" />
+      <div id="apikeyError"></div>
+      <button class="btn-primary" onclick="sauvegarderCle()">
+        <i class="ti ti-key" aria-hidden="true"></i> Enregistrer et continuer
+      </button>
+      <p style="font-size:12px;color:var(--color-text-tertiary);margin-top:1rem;">
+        Obtiens une clé sur <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue);">console.anthropic.com</a>
+      </p>
+    </div>
+  </div>
+
   <!-- SCREEN 1 : Upload -->
   <div id="screen-upload" class="screen active">
     <div class="header">
-      <div class="logo">Répéti<span>Teur</span></div>
-      <div class="subtitle">Prends une photo de ta leçon, et c'est parti !</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="logo">Répéti<span>Teur</span></div>
+          <div class="subtitle">Prends une photo de ta leçon, et c'est parti !</div>
+        </div>
+        <button onclick="reinitialiserCle()" style="background:none;border:none;font-size:12px;color:var(--color-text-tertiary);cursor:pointer;padding:4px;margin-top:4px;">
+          <i class="ti ti-key" aria-hidden="true"></i> Clé API
+        </button>
+      </div>
     </div>
     <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="dropZone">
       <i class="ti ti-photo-scan" aria-hidden="true"></i>
@@ -227,7 +259,35 @@
 
 </div>
 <script>
-const API_KEY = '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';
+// ── Clé API : lue depuis localStorage, jamais en dur dans le code ──────────
+let API_KEY = '';
+
+function sauvegarderCle() {
+  const val = document.getElementById('apikeyInput').value.replace(/[^\x20-\x7E]/g, '').trim();
+  if (!val.startsWith('sk-ant')) {
+    document.getElementById('apikeyError').innerHTML =
+      '<div class="error-msg" style="margin-top:0.5rem"><i class="ti ti-alert-circle"></i> Clé invalide. Elle doit commencer par sk-ant…</div>';
+    return;
+  }
+  API_KEY = val;
+  localStorage.setItem('repetiteur_apikey', val);
+  showScreen('screen-upload');
+}
+
+function reinitialiserCle() {
+  localStorage.removeItem('repetiteur_apikey');
+  API_KEY = '';
+  showScreen('screen-apikey');
+}
+
+// Au chargement : vérifier si clé déjà sauvegardée
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('repetiteur_apikey');
+  if (saved) {
+    API_KEY = saved;
+    showScreen('screen-upload');
+  }
+});
 
 // Modes de session
 const MODES = {
@@ -358,7 +418,6 @@ async function lancerSession() {
 }
 
 async function appelAPI(messages, maxTokens) {
-  // Nettoyer la clé : garder uniquement les caractères ASCII imprimables (32-126)
   const cleanKey = API_KEY.replace(/[^\x20-\x7E]/g, '').trim();
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -392,6 +451,16 @@ function extraireJSON(raw) {
   const match = raw.match(/\{[\s\S]*?"questions"\s*:\s*\[[\s\S]*?\]\s*\}/);
   if (match) return JSON.parse(match[0]);
   throw new Error('Format de réponse invalide — réessaie.');
+}
+
+// Mélange Fisher-Yates — déclaré global pour être testable et réutilisable
+function shuffleArr(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 async function genererQuestions() {
@@ -448,7 +517,7 @@ CONTRAINTE ABSOLUE SUR CHAQUE QUESTION :
 - Parle de "ton cours" dans les explications, jamais de "le document" ou "le texte"
 
 RÈGLE CRITIQUE SUR LES OPTIONS :
-- Mélange ALÉATOIREMENT l'ordre des 4 options de chaque question. La bonne réponse ne doit PAS être systématiquement en première position (pas toujours en A).
+- Mélange ALÉATOIREMENT l'ordre des 4 options. La bonne réponse ne doit PAS être systématiquement en A.
 - Utilise "bonne_reponse_texte" : copie EXACTEMENT le texte de la bonne option, sans le préfixe A./B./C./D.
 
 Réponds avec UNIQUEMENT ce JSON valide, sans texte avant ni après, sans backticks :
@@ -479,35 +548,15 @@ Réponds avec UNIQUEMENT ce JSON valide, sans texte avant ni après, sans backti
   }
 
   const validees = (parsed.questions || []).filter(q => q.type === 'qcm' && sourceValide(q));
-
-  // Si moins de 50% passent la validation → on garde tout (évite session vide)
   let brutes = validees.length >= Math.ceil(m.total * 0.5) ? validees : (parsed.questions || []).filter(q => q.type === 'qcm');
-
   if (brutes.length === 0) throw new Error('Aucune question générée. Réessaie.');
 
-  // ── CORRECTIF BUG : mélange des options côté client (double sécurité) ──────
-  // Claude place parfois la bonne réponse en A. On mélange et on identifie
-  // la bonne réponse par son TEXTE, pas sa position.
-  function shuffleArr(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
   questions = brutes.map(q => {
-    // Extraire les textes bruts (sans "A. ", "B. "...)
     const rawOpts = q.options.map(o => o.replace(/^[A-D]\.\s*/, '').trim());
-    // Identifier la bonne réponse par texte
     const bonTexte = (q.bonne_reponse_texte || '').trim();
-    // Mélanger
     const shuffled = shuffleArr(rawOpts);
-    // Ré-étiqueter A/B/C/D
     const labels = ['A', 'B', 'C', 'D'];
     const newOptions = shuffled.map((t, i) => `${labels[i]}. ${t}`);
-    // Trouver la nouvelle lettre de la bonne réponse
     const newIdx = shuffled.findIndex(t => t === bonTexte);
     const newLetter = newIdx >= 0 ? labels[newIdx] : labels[0];
     return { ...q, options: newOptions, bonne_reponse: newLetter, bonne_reponse_texte: bonTexte };
