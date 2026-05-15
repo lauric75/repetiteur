@@ -560,7 +560,29 @@ Réponds avec UNIQUEMENT ce JSON valide, sans texte avant ni après, sans backti
   const validees = (parsed.questions || []).filter(q => q.type === 'qcm' && sourceValide(q));
 
   // Si moins de 50% passent la validation → on garde tout (évite session vide)
-  questions = validees.length >= Math.ceil(m.total * 0.5) ? validees : (parsed.questions || []).filter(q => q.type === 'qcm');
+  const qBrutes = validees.length >= Math.ceil(m.total * 0.5) ? validees : (parsed.questions || []).filter(q => q.type === 'qcm');
+
+  // ── Mélange aléatoire des options pour éviter que A soit toujours correct ─
+  const lettres = ['A', 'B', 'C', 'D'];
+  questions = qBrutes.map(q => {
+    // Retrouver le texte de la bonne réponse
+    const bonneLettre = q.bonne_reponse.trim().toUpperCase();
+    const bonneOption = q.options.find(o => o.trim().toUpperCase().startsWith(bonneLettre));
+    if (!bonneOption) return q; // sécurité : si on ne trouve pas, on laisse tel quel
+
+    // Mélanger les options (Fisher-Yates)
+    const shuffled = [...q.options];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // Réattribuer les lettres A/B/C/D et trouver la nouvelle lettre de la bonne réponse
+    const nouvellesOptions = shuffled.map((opt, i) => lettres[i] + '. ' + opt.replace(/^[A-D]\.\s*/i, ''));
+    const nouvelleLettre   = lettres[shuffled.findIndex(o => o === bonneOption)];
+
+    return { ...q, options: nouvellesOptions, bonne_reponse: nouvelleLettre };
+  });
 
   if (questions.length === 0) throw new Error('Aucune question générée. Réessaie.');
 }
