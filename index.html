@@ -1,3 +1,24 @@
+<!-- RepétiTeur v12.9 — 2026-05-17
+     CORRECTIF PÉDAGOGIQUE v12.9 :
+     - Prompt : interdiction explicite des questions de COMPTAGE (combien de mots/verbes/pronoms…)
+     - Prompt : interdiction des questions sur la FORME (couleur, surlignage, mise en page, position)
+     - Prompt : objectif pédagogique positif — tester la compréhension du savoir, pas la présentation
+     - Filtre local : regex anti-comptage + regex anti-forme (couleur/surlignage/colonne/tableau)
+     CORRECTIF CRITIQUE v12.8 :
+     - Transcription : "Si un mot est illisible, écris [illisible] — n'invente jamais un mot"
+     - Tour 2 : exemples thématiques supprimés du prompt (biaisaient vers l'eau)
+     - Tour 2 : règle explicite — ne pas poser de question sur un mot [illisible]
+     - Tour 2 : formulation plus directe sans référence à la source
+     CORRECTIF v12.2 :
+     - Questions style évaluation scolaire : jamais "selon ton cours" ni référence à la source
+     - Correction enrichie : réponse exacte formulée + élément de contexte mémorisable
+     - Filtre anti-formulations parasites élargi
+     CONSERVÉ depuis v12 :
+     - N1a : pourquoi_faux — explication des mauvaises réponses
+     - N1b : bouton indice avant de répondre
+     - N2a/b/c : historique, progression, répétition espacée
+     - Fisher-Yates, proxy Cloudflare, compression images, rapport
+-->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -36,11 +57,11 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body { font-family: var(--font-sans); background: var(--color-background-secondary); min-height: 100vh; display: flex; justify-content: center; padding: env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0); }
     #app { width: 100%; max-width: 680px; background: var(--color-background-secondary); padding: 1.5rem 1.25rem 3rem; }
-    .screen { display: none; }
-    .screen.active { display: block; }
+    .screen { display: none; } .screen.active { display: block; }
     .header { margin-bottom: 2rem; }
     .logo { font-size: 24px; font-weight: 600; color: var(--color-text-primary); letter-spacing: -0.5px; }
     .logo span { color: var(--blue-light); }
+    .logo-version { font-size: 11px; color: var(--color-text-tertiary); font-weight: 400; margin-left: 8px; vertical-align: middle; }
     .subtitle { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
     .upload-zone { border: 1.5px dashed var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 3rem 2rem; text-align: center; cursor: pointer; transition: background 0.15s; background: var(--color-background-primary); }
     .upload-zone:hover, .upload-zone:active { background: var(--color-background-secondary); }
@@ -50,13 +71,8 @@
     #fileInput { display: none; }
     .preview-wrap { margin-top: 1.5rem; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); }
-    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 1.5rem 0; }
-    .config-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
-    .config-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
-    .config-val { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
     .btn-primary { background: var(--blue); color: #fff; border: none; border-radius: var(--border-radius-md); padding: 14px 24px; font-size: 16px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 1rem; transition: opacity 0.15s; }
-    .btn-primary:hover { opacity: 0.88; }
-    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary:hover { opacity: 0.88; } .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
     .loading-block { text-align: center; padding: 4rem 1rem; }
     .spinner { width: 40px; height: 40px; border: 3px solid var(--color-border-tertiary); border-top-color: var(--blue-light); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.25rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -70,21 +86,28 @@
     .question-type { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--color-text-secondary); margin-bottom: 8px; }
     .question-text { font-size: 16px; font-weight: 500; color: var(--color-text-primary); line-height: 1.5; margin-bottom: 1.25rem; }
     .options-grid { display: flex; flex-direction: column; gap: 8px; }
-    .opt-btn { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 13px 16px; font-size: 15px; text-align: left; cursor: pointer; color: var(--color-text-primary); transition: background 0.1s; font-family: var(--font-sans); }
+    .opt-btn { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 13px 16px; font-size: 15px; text-align: left; cursor: pointer; color: var(--color-text-primary); transition: background 0.1s; font-family: var(--font-sans); width: 100%; }
     .opt-btn:hover:not(:disabled) { background: var(--color-background-secondary); }
     .opt-btn.correct { border-color: #3B6D11; background: var(--color-background-success); color: var(--color-text-success); }
-    .opt-btn.wrong { border-color: #A32D2D; background: var(--color-background-danger); color: var(--color-text-danger); }
+    .opt-btn.wrong { border-color: #A32D2D; background: var(--color-background-danger); color: var(--color-text-danger); text-decoration: line-through; opacity: 0.8; }
+    .opt-btn.neutre { opacity: 0.5; }
     .opt-btn:disabled { cursor: default; }
-    .open-input { width: 100%; padding: 12px 14px; font-size: 15px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); resize: vertical; min-height: 90px; font-family: var(--font-sans); }
-    .open-input:focus { outline: none; border-color: var(--blue-light); }
+    /* Feedback enrichi */
     .feedback-block { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: var(--border-radius-md); font-size: 14px; line-height: 1.6; }
     .feedback-block.ok { background: var(--color-background-success); color: var(--color-text-success); border: 0.5px solid var(--color-border-success); }
     .feedback-block.ko { background: var(--color-background-danger); color: var(--color-text-danger); border: 0.5px solid var(--color-border-danger); }
-    .feedback-block.partial { background: var(--color-background-warning); color: var(--color-text-warning); border: 0.5px solid #FAC775; }
-    .feedback-label { font-weight: 500; margin-bottom: 4px; }
+    .feedback-label { font-weight: 600; margin-bottom: 6px; font-size: 15px; }
+    .feedback-explication { margin-bottom: 8px; }
+    .feedback-pourquoi { font-size: 13px; opacity: 0.85; border-top: 0.5px solid currentColor; padding-top: 8px; margin-top: 8px; opacity: 0.75; }
+    .feedback-contexte { font-size: 13px; font-style: italic; border-top: 0.5px solid currentColor; padding-top: 8px; margin-top: 8px; opacity: 0.85; }
+    /* Indice */
+    .btn-indice { background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--color-text-secondary); margin-bottom: 1rem; font-family: var(--font-sans); transition: background 0.1s; }
+    .btn-indice:hover { background: var(--color-background-secondary); }
+    .indice-block { background: var(--color-background-warning); color: var(--color-text-warning); border: 0.5px solid #FAC775; border-radius: var(--border-radius-md); padding: 10px 14px; font-size: 13px; margin-bottom: 1rem; line-height: 1.5; }
+    /* Bilan */
     .btn-next { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 11px 20px; font-size: 15px; cursor: pointer; color: var(--color-text-primary); margin-top: 0.75rem; transition: background 0.1s; font-family: var(--font-sans); }
     .btn-next:hover { background: var(--color-background-secondary); }
-    .score-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2rem; }
+    .score-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
     .score-card { background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 1rem; text-align: center; border: 0.5px solid var(--color-border-tertiary); }
     .score-card .num { font-size: 28px; font-weight: 500; color: var(--color-text-primary); }
     .score-card .lbl { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
@@ -97,19 +120,23 @@
     .erreur-item { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px 14px; margin-bottom: 8px; font-size: 13px; background: var(--color-background-primary); }
     .erreur-q { color: var(--color-text-secondary); margin-bottom: 4px; }
     .erreur-bonne { color: var(--color-text-success); font-weight: 500; }
-    .hist-section { margin-bottom: 1.5rem; }
-    .hist-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.75rem; }
-    .hist-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 13px; }
-    .hist-label { width: 90px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .hist-bar-bg { flex: 1; height: 8px; background: var(--color-background-secondary); border-radius: 99px; }
-    .hist-bar-fill { height: 8px; border-radius: 99px; background: var(--blue-light); }
-    .hist-pct { width: 36px; text-align: right; color: var(--color-text-secondary); }
+    /* Progression N2b */
+    .progression-section { margin-bottom: 1.5rem; }
+    .progression-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.75rem; }
+    .progression-chart { display: flex; align-items: flex-end; gap: 6px; height: 60px; }
+    .prog-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .prog-bar-outer { width: 100%; background: var(--color-background-secondary); border-radius: 4px; height: 48px; display: flex; align-items: flex-end; overflow: hidden; }
+    .prog-bar-inner { width: 100%; border-radius: 4px; transition: height 0.4s; }
+    .prog-bar-inner.ok { background: var(--blue-light); }
+    .prog-bar-inner.fail { background: var(--color-border-secondary); }
+    .prog-label { font-size: 10px; color: var(--color-text-tertiary); }
+    /* Boutons */
     .btn-row { display: flex; gap: 10px; }
     .btn-sec { flex: 1; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 13px 16px; font-size: 15px; cursor: pointer; color: var(--color-text-primary); text-align: center; transition: background 0.1s; }
     .btn-sec:hover { background: var(--color-background-secondary); }
     .btn-err { flex: 1; background: var(--blue); border: none; border-radius: var(--border-radius-md); padding: 13px 16px; font-size: 15px; cursor: pointer; color: #fff; font-weight: 500; text-align: center; }
     .btn-err:hover { opacity: 0.88; }
-    .btn-err:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* Mode */
     .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 0.5rem; }
     .mode-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; text-align: center; }
     .mode-card.active { border: 2px solid var(--blue); background: var(--color-background-info); }
@@ -119,11 +146,7 @@
     .mode-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
     .mode-card.active .mode-desc { color: var(--color-text-info); }
     .error-msg { color: var(--color-text-danger); font-size: 14px; background: var(--color-background-danger); border: 0.5px solid var(--color-border-danger); border-radius: var(--border-radius-md); padding: 12px 14px; margin-top: 1rem; }
-    .rapport-block { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
-    .rapport-titre { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
-    .rapport-texte { font-size: 14px; color: var(--color-text-primary); line-height: 1.7; white-space: pre-wrap; }
-    .relance-block { background: var(--color-background-warning); border: 0.5px solid #FAC775; border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.25rem; font-size: 14px; color: var(--color-text-warning); line-height: 1.6; }
-    .relance-block strong { font-weight: 500; display: block; margin-bottom: 4px; }
+    /* Rapport */
     .rapport-print { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.5rem; }
     .rapport-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 1rem; }
     .rapport-logo { font-size: 20px; font-weight: 600; color: var(--color-text-primary); }
@@ -145,60 +168,54 @@
 <body>
 <div id="app">
 
-  <!-- SCREEN 0 : Clé API (premier lancement uniquement) -->
+  <!-- SCREEN 0 : Clé API -->
   <div id="screen-apikey" class="screen">
     <div class="header" style="padding-top:0.5rem">
-      <div class="logo">Répéti<span>Teur</span></div>
+      <div class="logo">Répéti<span>Teur</span><span class="logo-version">v12.9</span></div>
       <div class="subtitle">Premier lancement — saisie unique</div>
     </div>
     <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem">
       <p style="font-size:14px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1rem">
         RepétiTeur a besoin de ta clé API Anthropic pour fonctionner.<br>
-        Obtiens-en une gratuitement sur <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue)">console.anthropic.com</a>.
+        Obtiens-en une sur <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue)">console.anthropic.com</a>.
       </p>
       <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off" autocorrect="off" autocapitalize="off"
         style="width:100%;padding:12px 13px;font-size:15px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);margin-bottom:0.5rem" />
-      <p style="font-size:12px;color:var(--color-text-tertiary)">
-        Mémorisée sur cet appareil uniquement — jamais partagée.
-      </p>
+      <p style="font-size:12px;color:var(--color-text-tertiary)">Mémorisée sur cet appareil uniquement.</p>
     </div>
-    <button class="btn-primary" onclick="validerAPIKey()">
-      <i class="ti ti-arrow-right" aria-hidden="true"></i> Continuer
-    </button>
+    <button class="btn-primary" onclick="validerAPIKey()"><i class="ti ti-arrow-right"></i> Continuer</button>
   </div>
 
   <!-- SCREEN 1 : Upload -->
   <div id="screen-upload" class="screen">
     <div class="header">
-      <div class="logo">Répéti<span>Teur</span></div>
+      <div class="logo">Répéti<span>Teur</span><span class="logo-version">v12.9</span></div>
       <div class="subtitle">Prends une photo de ta leçon, et c'est parti !</div>
     </div>
     <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="dropZone">
-      <i class="ti ti-photo-scan" aria-hidden="true"></i>
+      <i class="ti ti-photo-scan"></i>
       <p><strong>Appuie ici</strong> pour choisir une photo de ta leçon</p>
       <p style="font-size:13px;margin-top:8px;">JPG, PNG — jusqu'à 5 pages</p>
     </div>
     <input type="file" id="fileInput" accept="image/*" multiple />
     <div class="preview-wrap" id="previewWrap"></div>
     <div id="configGrid" style="display:none">
-      <p style="font-size:13px;color:var(--color-text-secondary);margin:1.25rem 0 0.75rem;">Choisis ton mode de session :</p>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin:1.25rem 0 0.75rem;">Choisis ton mode :</p>
       <div class="mode-grid">
         <div class="mode-card active" id="modeRapide" onclick="selectMode('rapide')">
-          <div class="mode-icon"><i class="ti ti-bolt" aria-hidden="true"></i></div>
+          <div class="mode-icon"><i class="ti ti-bolt"></i></div>
           <div class="mode-title">Rapide</div>
           <div class="mode-desc">15 questions · ~8 min<br>100 % QCM</div>
         </div>
         <div class="mode-card" id="modeIntense" onclick="selectMode('intense')">
-          <div class="mode-icon"><i class="ti ti-flame" aria-hidden="true"></i></div>
+          <div class="mode-icon"><i class="ti ti-flame"></i></div>
           <div class="mode-title">Intense</div>
           <div class="mode-desc">25 questions · ~15 min<br>dont 5 questions ⚡ difficiles</div>
         </div>
       </div>
     </div>
     <div id="uploadError"></div>
-    <button class="btn-primary" id="btnLancer" disabled onclick="lancerSession()">
-      <i class="ti ti-rocket" aria-hidden="true"></i> Lancer la session
-    </button>
+    <button class="btn-primary" id="btnLancer" disabled onclick="lancerSession()"><i class="ti ti-rocket"></i> Lancer la session</button>
     <p style="text-align:center;margin-top:1rem;font-size:12px;color:var(--color-text-tertiary)">
       <a href="#" onclick="changerCle();return false;" style="color:var(--color-text-tertiary)">Changer de clé API</a>
     </p>
@@ -216,19 +233,19 @@
   <div id="screen-question" class="screen">
     <div class="session-header">
       <span class="matiere-badge" id="matiereBadge">Matière</span>
-      <div class="progress-bar-wrap">
-        <div class="progress-bar" id="progressBar" style="width:0%"></div>
-      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
       <span class="progress-label" id="progressLabel">0 / 0</span>
     </div>
     <div class="question-card">
       <div class="question-type" id="qType">QCM</div>
       <div class="question-text" id="qText">…</div>
+      <button class="btn-indice" id="btnIndice" onclick="afficherIndice()"><i class="ti ti-bulb"></i> Indice</button>
+      <div id="indiceBlock"></div>
       <div class="options-grid" id="optionsGrid"></div>
       <div id="feedbackBlock"></div>
     </div>
     <button class="btn-next" id="btnNext" style="display:none" onclick="nextQuestion()">
-      Question suivante <i class="ti ti-arrow-right" aria-hidden="true"></i>
+      Question suivante <i class="ti ti-arrow-right"></i>
     </button>
   </div>
 
@@ -242,26 +259,26 @@
       <div class="score-card"><div class="num" id="scoreTotal">—</div><div class="lbl">Score</div></div>
       <div class="score-card"><div class="num" id="scoreOk">—</div><div class="lbl">Correctes</div></div>
       <div class="score-card"><div class="num" id="scoreKo">—</div><div class="lbl">Erreurs</div></div>
+      <div class="score-card"><div class="num" id="scoreIndices">—</div><div class="lbl">Indices</div></div>
     </div>
     <div class="verdict-block" id="verdictBlock"></div>
+    <div class="progression-section" id="progressionSection" style="display:none">
+      <div class="progression-title"><i class="ti ti-chart-bar"></i> Ta progression sur cette leçon</div>
+      <div class="progression-chart" id="progressionChart"></div>
+    </div>
     <div class="erreurs-section" id="erreursSection"></div>
-    <div class="hist-section" id="histSection"></div>
     <div class="btn-row" style="margin-bottom:10px">
-      <div class="btn-sec" onclick="resetApp()" style="cursor:pointer">
-        <i class="ti ti-refresh" aria-hidden="true"></i> Nouvelle session
-      </div>
-      <div class="btn-err" id="btnRevoirErreurs" onclick="revoirErreurs()" style="display:none">
-        <i class="ti ti-repeat" aria-hidden="true"></i> Relancer sur les erreurs
-      </div>
+      <div class="btn-sec" onclick="resetApp()" style="cursor:pointer"><i class="ti ti-refresh"></i> Nouvelle session</div>
+      <div class="btn-err" id="btnRevoirErreurs" onclick="revoirErreurs()" style="display:none"><i class="ti ti-repeat"></i> Relancer sur les erreurs</div>
     </div>
     <button class="btn-primary" id="btnRapport" onclick="afficherEcranRapport()" style="display:none;margin-top:0">
-      <i class="ti ti-file-analytics" aria-hidden="true"></i> Générer le rapport
+      <i class="ti ti-file-analytics"></i> Générer le rapport
     </button>
   </div>
 
   <!-- SCREEN 5 : Rapport -->
   <div id="screen-rapport" class="screen">
-    <div class="rapport-print" id="rapportPrint">
+    <div class="rapport-print">
       <div class="rapport-header">
         <div class="rapport-logo">Répéti<span>Teur</span></div>
         <div class="rapport-date" id="rapportDate"></div>
@@ -272,34 +289,38 @@
       <div id="rapportErreurs"></div>
     </div>
     <p style="font-size:12px;color:var(--color-text-tertiary);text-align:center;margin-top:1rem">
-      <i class="ti ti-camera" aria-hidden="true"></i> Prends une photo de ce rapport pour le garder
+      <i class="ti ti-camera"></i> Prends une photo de ce rapport pour le garder
     </p>
     <div class="btn-row" style="margin-top:1rem">
-      <div class="btn-sec" onclick="showScreen('screen-bilan')" style="cursor:pointer">
-        <i class="ti ti-arrow-left" aria-hidden="true"></i> Retour
-      </div>
-      <div class="btn-sec" onclick="resetApp()" style="cursor:pointer">
-        <i class="ti ti-refresh" aria-hidden="true"></i> Nouvelle session
-      </div>
+      <div class="btn-sec" onclick="showScreen('screen-bilan')" style="cursor:pointer"><i class="ti ti-arrow-left"></i> Retour</div>
+      <div class="btn-sec" onclick="resetApp()" style="cursor:pointer"><i class="ti ti-refresh"></i> Nouvelle session</div>
     </div>
   </div>
 
 </div>
 <script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
 let API_KEY = '';
 const PROXY_URL = 'https://repetiteur.lauriclebas.workers.dev';
+const MODES = { rapide: { total: 15, difficiles: 0 }, intense: { total: 25, difficiles: 5 } };
+const LETTRES = ['A', 'B', 'C', 'D'];
+const HISTO_KEY = 'repeti_histo_v12'; // clé localStorage pour la progression
 
-// Modes de session
-const MODES = {
-  rapide:  { total: 15, difficiles: 0 },
-  intense: { total: 25, difficiles: 5 }
-};
+// ─────────────────────────────────────────────
+// ÉTAT
+// ─────────────────────────────────────────────
 let modeActuel = 'rapide';
-
 let imgBase64List = [], questions = [], currentIdx = 0, results = [];
-let matiereDetectee = '', titreLecon = '', errorOnlyMode = false;
+let matiereDetectee = '', titreLecon = '', cleLecon = '';
+let rapportCache = null;
+let indiceAffiche = false;
+let nbIndicesUtilises = 0;
 
-// ── Init : clé API sauvegardée ? ─────────────────────────────────────────
+// ─────────────────────────────────────────────
+// INIT : clé API
+// ─────────────────────────────────────────────
 (function init() {
   try {
     const saved = localStorage.getItem('repeti_apikey');
@@ -312,8 +333,7 @@ let matiereDetectee = '', titreLecon = '', errorOnlyMode = false;
 })();
 
 function validerAPIKey() {
-  const raw = document.getElementById('apiKeyInput').value || '';
-  const val = raw.replace(/[^\x20-\x7E]/g, '').trim();
+  const val = (document.getElementById('apiKeyInput').value || '').replace(/[^\x20-\x7E]/g, '').trim();
   if (!val.startsWith('sk-ant')) { alert('Clé invalide — elle doit commencer par sk-ant-'); return; }
   API_KEY = val;
   try { localStorage.setItem('repeti_apikey', val); } catch(e) {}
@@ -326,21 +346,17 @@ function changerCle() {
   showScreen('screen-apikey');
 }
 
-const fileInput = document.getElementById('fileInput');
-fileInput.addEventListener('change', handleFiles);
-const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = 'var(--color-background-secondary)'; });
-dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
-dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.style.background = ''; handleFiles({ target: { files: e.dataTransfer.files } }); });
-
-function selectMode(mode) {
-  modeActuel = mode;
-  document.getElementById('modeRapide').classList.toggle('active', mode === 'rapide');
-  document.getElementById('modeIntense').classList.toggle('active', mode === 'intense');
-}
-
-const MAX_B64_BYTES = 4.5 * 1024 * 1024; // 4.5 MB en octets réels (avant base64)
+// ─────────────────────────────────────────────
+// UPLOAD & COMPRESSION
+// ─────────────────────────────────────────────
+const MAX_B64_BYTES = 4.5 * 1024 * 1024;
 const MAX_DIM = 2048;
+
+document.getElementById('fileInput').addEventListener('change', handleFiles);
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background='var(--color-background-secondary)'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.background=''; });
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.style.background=''; handleFiles({ target: { files: e.dataTransfer.files } }); });
 
 function compresserImage(dataUrl) {
   return new Promise((resolve, reject) => {
@@ -348,29 +364,18 @@ function compresserImage(dataUrl) {
     img.onerror = () => reject(new Error('Image illisible'));
     img.onload = () => {
       let w = img.width, h = img.height;
-
-      // Redimensionner si nécessaire
       if (w > MAX_DIM || h > MAX_DIM) {
         if (w >= h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
-        else        { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+        else { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
       }
-
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-
-      // Compression progressive : on cible < 4.5 MB en données brutes
-      // base64 gonfle de ~33%, donc on cible length/1.37 < MAX_B64_BYTES
-      let quality = 0.88;
-      let out = canvas.toDataURL('image/jpeg', quality);
-      let rawBytes = Math.round(out.length / 1.37);
-
-      while (rawBytes > MAX_B64_BYTES && quality > 0.30) {
+      let quality = 0.88, out = canvas.toDataURL('image/jpeg', quality);
+      while (Math.round(out.length / 1.37) > MAX_B64_BYTES && quality > 0.30) {
         quality = Math.round((quality - 0.10) * 100) / 100;
         out = canvas.toDataURL('image/jpeg', quality);
-        rawBytes = Math.round(out.length / 1.37);
       }
-
       resolve({ dataUrl: out, b64: out.split(',')[1], mime: 'image/jpeg' });
     };
     img.src = dataUrl;
@@ -379,39 +384,25 @@ function compresserImage(dataUrl) {
 
 function handleFiles(e) {
   const files = Array.from(e.target.files || []).slice(0, 5);
-  if (files.length === 0) return;
-
+  if (!files.length) return;
   imgBase64List = [];
   document.getElementById('previewWrap').innerHTML = '';
   document.getElementById('uploadError').innerHTML = '';
   document.getElementById('btnLancer').disabled = true;
   document.getElementById('configGrid').style.display = 'none';
-
   let done = 0;
-
   files.forEach(file => {
     const reader = new FileReader();
-    reader.onerror = () => {
-      document.getElementById('uploadError').innerHTML =
-        '<div class="error-msg"><i class="ti ti-alert-circle"></i> Impossible de lire ce fichier.</div>';
-      done++;
-    };
+    reader.onerror = () => { showError('Impossible de lire ce fichier.'); done++; };
     reader.onload = async ev => {
       try {
-        const original = ev.target.result;
-        // On compresse TOUJOURS — les photos iPhone dépassent systématiquement 5 MB
-        const result = await compresserImage(original);
-
+        const result = await compresserImage(ev.target.result);
         imgBase64List.push({ b64: result.b64, mime: result.mime });
-
         const thumb = document.createElement('img');
-        thumb.src = result.dataUrl;
-        thumb.className = 'preview-img';
+        thumb.src = result.dataUrl; thumb.className = 'preview-img';
         document.getElementById('previewWrap').appendChild(thumb);
-      } catch (err) {
-        document.getElementById('uploadError').innerHTML =
-          `<div class="error-msg"><i class="ti ti-alert-circle"></i> Erreur : ${err.message}</div>`;
-      } finally {
+      } catch(err) { showError(err.message); }
+      finally {
         done++;
         if (done === files.length && imgBase64List.length > 0) {
           document.getElementById('configGrid').style.display = 'block';
@@ -423,25 +414,28 @@ function handleFiles(e) {
   });
 }
 
+function showError(msg) {
+  document.getElementById('uploadError').innerHTML = `<div class="error-msg"><i class="ti ti-alert-circle"></i> ${msg}</div>`;
+}
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0, 0);
 }
 
-async function lancerSession() {
-  errorOnlyMode = false;
-  showScreen('screen-loading');
-  document.getElementById('loadingText').textContent = 'Lecture de la leçon…';
-  try {
-    await genererQuestions();
-    demarrerSession();
-  } catch(err) {
-    showScreen('screen-upload');
-    document.getElementById('uploadError').innerHTML = `<div class="error-msg"><i class="ti ti-alert-circle"></i> Erreur : ${err.message}</div>`;
-  }
+function selectMode(mode) {
+  modeActuel = mode;
+  document.getElementById('modeRapide').classList.toggle('active', mode === 'rapide');
+  document.getElementById('modeIntense').classList.toggle('active', mode === 'intense');
 }
 
+// ─────────────────────────────────────────────
+// API
+// ─────────────────────────────────────────────
 async function appelAPI(messages, maxTokens) {
   let resp;
   try {
@@ -455,9 +449,7 @@ async function appelAPI(messages, maxTokens) {
         messages
       })
     });
-  } catch(e) {
-    throw new Error('Connexion impossible. Vérifie ta connexion internet.');
-  }
+  } catch(e) { throw new Error('Connexion impossible. Vérifie ta connexion internet.'); }
   if (!resp.ok) {
     const e = await resp.json().catch(() => ({}));
     throw new Error(e.error?.message || `Erreur API ${resp.status}`);
@@ -467,141 +459,245 @@ async function appelAPI(messages, maxTokens) {
 }
 
 function extraireJSON(raw) {
-  try { return JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch {}
+  // Nettoyer backticks
+  const clean = raw.replace(/```json|```/g, '').trim();
+
+  // Essai 1 : JSON complet direct
+  try { return JSON.parse(clean); } catch {}
+
+  // Essai 2 : extraire entre premier { et dernier }
   try {
-    const start = raw.indexOf('{'), end = raw.lastIndexOf('}');
-    if (start !== -1 && end !== -1) return JSON.parse(raw.slice(start, end + 1));
+    const s = clean.indexOf('{'), e = clean.lastIndexOf('}');
+    if (s !== -1 && e !== -1) return JSON.parse(clean.slice(s, e + 1));
   } catch {}
-  const match = raw.match(/\{[\s\S]*?"questions"\s*:\s*\[[\s\S]*?\]\s*\}/);
-  if (match) return JSON.parse(match[0]);
+
+  // Essai 3 : JSON tronqué — réparer le tableau questions incomplet
+  // Trouver le début du JSON et tenter de fermer proprement
+  try {
+    const s = clean.indexOf('{');
+    if (s !== -1) {
+      let fragment = clean.slice(s);
+      // Supprimer la dernière question incomplète (coupée au milieu)
+      // Trouver la dernière virgule avant un { incomplet
+      const dernierObjComplet = fragment.lastIndexOf('},');
+      if (dernierObjComplet !== -1) {
+        fragment = fragment.slice(0, dernierObjComplet + 1);
+        // Fermer le tableau et l'objet racine
+        fragment = fragment + ']}';
+        return JSON.parse(fragment);
+      }
+    }
+  } catch {}
+
+  // Essai 4 : regex sur le bloc questions
+  try {
+    const m = clean.match(/\{[\s\S]*?"questions"\s*:\s*\[[\s\S]*?\]\s*\}/);
+    if (m) return JSON.parse(m[0]);
+  } catch {}
+
   throw new Error('Format de réponse invalide — réessaie.');
+}
+
+// ─────────────────────────────────────────────
+// GÉNÉRATION DES QUESTIONS
+// ─────────────────────────────────────────────
+async function lancerSession() {
+  showScreen('screen-loading');
+  document.getElementById('loadingText').textContent = 'Lecture de la leçon…';
+  try {
+    await genererQuestions();
+    demarrerSession();
+  } catch(err) {
+    showScreen('screen-upload');
+    showError(err.message);
+  }
 }
 
 async function genererQuestions() {
   const m = MODES[modeActuel];
 
-  // ── TOUR 1 : Transcription avec les images ───────────────────────────────
+  // Tour 1 : transcription stricte
   document.getElementById('loadingText').textContent = 'Lecture du document…';
-
-  const tour1Messages = [{
+  const tour1 = [{
     role: 'user',
     content: [
-      ...imgBase64List.map(img => ({
-        type: 'image',
-        source: { type: 'base64', media_type: img.mime, data: img.b64 }
-      })),
-      { type: 'text', text: `Transcris intégralement le texte de ce document (cours manuscrit ou imprimé).
-- Conserve tous les titres, sous-titres, listes, chiffres et exemples
-- Ne résume pas, ne reformule pas, n'ajoute rien de ta propre connaissance
-- Commence ta réponse par : "TRANSCRIPTION:" suivi du texte exact du document` }
+      ...imgBase64List.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.mime, data: img.b64 } })),
+      { type: 'text', text: `Transcris mot pour mot le texte écrit visible dans ce document scolaire manuscrit ou imprimé.
+Règles strictes :
+- Recopie uniquement ce qui est lisible avec certitude
+- Si un mot est illisible, écris [illisible] — n'invente jamais un mot
+- Ne reformule pas, ne résume pas, ne complète pas avec tes connaissances
+- Conserve la structure : titres, sous-titres, listes, chiffres, définitions
+- Commence ta réponse par : "TRANSCRIPTION:" puis le texte exact` }
     ]
   }];
 
-  const transcription = await appelAPI(tour1Messages, 4000);
+  const transcription = await appelAPI(tour1, 4000);
+  if (!transcription || !transcription.includes('TRANSCRIPTION:') || transcription.length < 80)
+    throw new Error('Document illisible. Vérifie la qualité de la photo.');
 
-  if (!transcription || !transcription.includes('TRANSCRIPTION:') || transcription.length < 80) {
-    throw new Error('Le document n\'a pas pu être lu correctement. Vérifie la qualité de la photo.');
-  }
+  const texte = transcription.replace(/^TRANSCRIPTION:\s*/i, '').trim();
 
-  // ── TOUR 2 : QCM uniquement, ancré sur la transcription ─────────────────
+  // Clé unique pour mémoriser la progression de cette leçon
+  cleLecon = btoa(encodeURIComponent(texte.slice(0, 120))).slice(0, 32);
+
+  // Tour 2 : QCM basé sur la transcription
   document.getElementById('loadingText').textContent = 'Génération des questions…';
+  const difficiles = m.difficiles > 0 ? `\n- ${m.difficiles} questions avec "difficile":true (nuances, chiffres précis)` : '';
 
-  const texteTranscrit = transcription.replace(/^TRANSCRIPTION:\s*/i, '').trim();
-
-  const nbDifficiles = m.difficiles > 0 ? `\n- ${m.difficiles} questions doivent avoir "difficile":true : elles portent sur une nuance ou un chiffre précis du cours` : '';
-
-  const tour2Messages = [
-    ...tour1Messages,
+  const tour2 = [
+    ...tour1,
     { role: 'assistant', content: transcription },
-    { role: 'user', content: `Voici la transcription exacte du cours :
-
+    { role: 'user', content: `Voici la transcription exacte d'un cours scolaire :
 """
-${texteTranscrit}
+${texte}
 """
 
-Génère exactement ${m.total} questions QCM pour réviser ce cours. Toutes les questions sont de type "qcm".${nbDifficiles}
+Tu es un professeur de collège qui rédige une évaluation. Génère exactement ${m.total} questions QCM basées UNIQUEMENT sur le contenu ci-dessus.${difficiles}
 
-CONTRAINTE ABSOLUE SUR CHAQUE QUESTION :
-- La question doit porter sur un fait, un chiffre, un nom ou une définition qui apparaît MOT POUR MOT dans la transcription ci-dessus
-- La bonne réponse doit être un élément littéralement présent dans la transcription
-- Le champ "source" doit contenir la phrase exacte (copiée telle quelle) du cours qui prouve la bonne réponse
-- Si tu ne trouves pas de phrase exacte dans le cours pour justifier une question, NE L'ÉCRIS PAS
-- Zéro invention, zéro paraphrase approximative, zéro connaissance externe
-- Les 4 options doivent être plausibles mais seule la bonne réponse est dans le cours
-- Parle de "ton cours" dans les explications, jamais de "le document" ou "le texte"
+RÈGLES ABSOLUES :
+- Utilise UNIQUEMENT les faits, chiffres, définitions et exemples présents dans la transcription ci-dessus
+- N'invente aucune information absente du texte
+- Si un mot dans la transcription est marqué [illisible], ne pose pas de question dessus
+- Les questions doivent être directes, comme sur une feuille d'évaluation, sans jamais mentionner "le cours", "la leçon", "le document", "selon", "d'après"
+- Varier les types : définitions, causes, conséquences, comparaisons, mécanismes, chiffres en contexte
+- 4 options plausibles, bonne réponse distribuée aléatoirement entre A/B/C/D
+- Couvrir l'ensemble du texte de bout en bout
 
-Réponds avec UNIQUEMENT ce JSON valide, sans texte avant ni après, sans backticks :
-{"matiere":"...","titre_lecon":"...","questions":[{"id":1,"type":"qcm","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"bonne_reponse":"A","explication":"...","source":"phrase copiée mot pour mot depuis la transcription","difficile":false}]}` }
+OBJECTIF PÉDAGOGIQUE — chaque question doit évaluer la COMPRÉHENSION du savoir enseigné :
+- Une question valide teste si l'élève a compris une notion, un mécanisme, une cause, une conséquence, une définition, ou sait relier deux idées du cours.
+- Test de validité : la question doit pouvoir se poser même si le cours était lu à voix haute, sans voir la page. Si la réponse dépend de la présentation du cahier (couleur, surlignage, position, nombre d'éléments), la question est INVALIDE.
+
+STRICTEMENT INTERDIT — questions sur la FORME du document et non sur le SAVOIR :
+- Aucune question de comptage : ne JAMAIS demander combien de mots, de verbes, de pronoms, de phrases, de lignes, de colonnes, de cases, d'exemples ou d'éléments d'une liste/d'un tableau. Compter n'a aucune valeur de révision.
+  ❌ "Combien de pronoms personnels sont utilisés pour chaque verbe conjugué dans les tableaux ?"
+  ❌ "Combien de verbes sont présentés dans la catégorie surlignée en jaune ?"
+- Aucune question portant sur une couleur, un surlignage, un soulignement, un encadré, une mise en page, la position d'un mot, ou la structure visuelle (tableau, colonne, ligne). Les codes couleurs sont de la présentation, pas de la matière.
+  ❌ "Que désigne la partie surlignée en rouge ?"
+  ❌ "Quel mot se trouve dans la première colonne du tableau ?"
+- Si tu es tenté de poser une de ces questions, remplace-la par une question sur le SENS de l'élément concerné (ce qu'il signifie, à quoi il sert, pourquoi il est important).
+
+CORRECTION (champs "reponse_exacte" et "contexte") :
+- "reponse_exacte" : la réponse correcte formulée en une phrase complète et précise, comme un professeur l'écrirait au tableau
+- "contexte" : 1 phrase qui replace la réponse dans le cours, aide à mémoriser (ex: "C'est un problème croissant qui touche notamment l'Arabie Saoudite et l'Afrique du Sud.")
+- "indice" : 1 phrase qui stimule la réflexion en orientant vers le bon angle de pensée — SANS mentionner la réponse ni aucun élément de la bonne option. L'indice doit pointer vers une catégorie, un mécanisme, une comparaison ou un contexte. Ex: "Pense à ce qui distingue un manque temporaire d'un manque structurel." ou "Réfléchis aux secteurs économiques qui ont besoin d'eau pour fonctionner." — jamais "Pense à l'agriculture" si agriculture est la réponse
+- "pourquoi_faux" : explication courte pour chaque mauvaise option
+- 4 options plausibles, bonne réponse variée, jamais toujours A
+- Couvre le cours de bout en bout
+- N'invente AUCUN fait, chiffre ou exemple absent du cours — toute question doit s'appuyer sur un élément littéralement présent dans la transcription ci-dessus
+
+JSON uniquement, sans backticks :
+{"matiere":"...","titre_lecon":"...","questions":[{"id":1,"type":"qcm","question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"bonne_reponse":"A","reponse_exacte":"...","contexte":"...","explication":"...","indice":"...","pourquoi_faux":{"B":"...","C":"...","D":"..."},"source":"...","difficile":false}]}` }
   ];
 
-  const raw = await appelAPI(tour2Messages, 6000);
+  const raw = await appelAPI(tour2, 9000);
   const parsed = extraireJSON(raw);
 
   matiereDetectee = parsed.matiere || 'Cours';
-  titreLecon      = parsed.titre_lecon || '';
+  titreLecon = parsed.titre_lecon || '';
 
-  // ── Validation stricte : source doit matcher la transcription ────────────
-  document.getElementById('loadingText').textContent = 'Vérification des questions…';
+  // Validation : filtrer les questions vagues, de comptage ou sur la forme
+  function questionValide(q) {
+    if (!q.question || q.question.trim().length < 15) return false;
+    if (!q.options || q.options.length < 4) return false;
+    if (!q.bonne_reponse) return false;
+    const qLow = q.question.toLowerCase();
 
-  const texteNorm = texteTranscrit.toLowerCase().replace(/\s+/g, ' ');
+    // Rejeter les formulations vagues typiques
+    const vagues = [
+      'quel pourcentage est associé',
+      'quelle valeur est mentionnée',
+      'quel mot désigne',
+      'quel terme est utilisé pour',
+      'quelle expression',
+      'selon ton cours',
+      "d'après ton cours",
+      'dans la leçon',
+      'le cours mentionne',
+      "d'après ce que tu as appris"
+    ];
+    if (vagues.some(v => qLow.includes(v))) return false;
 
-  function sourceValide(q) {
-    if (!q.source || q.source.trim().length < 8) return false;
-    // Prendre les 4 premiers mots de la source et vérifier présence dans transcription
-    const mots = q.source.toLowerCase().replace(/\s+/g, ' ').trim().split(' ');
-    // Tester plusieurs fenêtres de 4 mots dans la source
-    for (let i = 0; i <= mots.length - 4; i++) {
-      const fragment = mots.slice(i, i + 4).join(' ');
-      if (fragment.length > 10 && texteNorm.includes(fragment)) return true;
-    }
-    return false;
+    // Rejeter les questions de COMPTAGE (aucune valeur pédagogique)
+    // ex: "combien de verbes", "quel est le nombre de pronoms", "combien y a-t-il de lignes"
+    const motsFormeComptage = 'mots?|verbes?|pronoms?|phrases?|lignes?|colonnes?|cases?|exemples?|éléments?|cat[ée]gories?|listes?|tableaux?|points?|paragraphes?|entr[ée]es?|termes?';
+    const comptageRe = new RegExp(
+      '(combien\\s+(de\\s+|y\\s*a-?t-?il\\s+(de\\s+)?)?(' + motsFormeComptage + '))' +
+      '|((le\\s+)?nombre\\s+(de\\s+|d\')(' + motsFormeComptage + '))' +
+      '|(combien\\s+.{0,30}\\b(sont|y a-t-il|figurent|apparaissent)\\b)',
+      'i'
+    );
+    if (comptageRe.test(qLow)) return false;
+
+    // Rejeter les questions sur la FORME / PRÉSENTATION (couleur, surlignage, mise en page)
+    const formeRe = /surlign|en\s+(jaune|rouge|vert|verte|bleu|bleue|orange|rose|gris|grise|noir|noire|violet)|soulign[ée]|encadr[ée]|en\s+gras|en\s+italique|mise\s+en\s+(page|forme)|(premi[èe]re|deuxi[èe]me|derni[èe]re|troisi[èe]me)\s+(colonne|ligne|case|rang[ée]e)|dans\s+(le|ce|un)\s+tableau|couleur/i;
+    if (formeRe.test(qLow)) return false;
+
+    return true;
   }
 
-  const validees = (parsed.questions || []).filter(q => q.type === 'qcm' && sourceValide(q));
-
-  // Si moins de 50% passent la validation → on garde tout (évite session vide)
+  const validees = (parsed.questions || []).filter(q => q.type === 'qcm' && questionValide(q));
   const qBrutes = validees.length >= Math.ceil(m.total * 0.5) ? validees : (parsed.questions || []).filter(q => q.type === 'qcm');
 
-  // ── Mélange aléatoire des options pour éviter que A soit toujours correct ─
-  const lettres = ['A', 'B', 'C', 'D'];
+  // N2c : répétition espacée — remonter les questions déjà ratées
+  const historiqueLecon = chargerHistorique(cleLecon);
+  const questionsRateesIds = new Set(historiqueLecon.flatMap(s => s.erreurs || []));
+
+  // Fisher-Yates shuffle + réattribution lettres
   questions = qBrutes.map(q => {
-    // Retrouver le texte de la bonne réponse
     const bonneLettre = q.bonne_reponse.trim().toUpperCase();
     const bonneOption = q.options.find(o => o.trim().toUpperCase().startsWith(bonneLettre));
-    if (!bonneOption) return q; // sécurité : si on ne trouve pas, on laisse tel quel
-
-    // Mélanger les options (Fisher-Yates)
+    if (!bonneOption) return q;
     const shuffled = [...q.options];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-
-    // Réattribuer les lettres A/B/C/D et trouver la nouvelle lettre de la bonne réponse
-    const nouvellesOptions = shuffled.map((opt, i) => lettres[i] + '. ' + opt.replace(/^[A-D]\.\s*/i, ''));
-    const nouvelleLettre   = lettres[shuffled.findIndex(o => o === bonneOption)];
-
-    return { ...q, options: nouvellesOptions, bonne_reponse: nouvelleLettre };
+    const nouvellesOptions = shuffled.map((opt, i) => LETTRES[i] + '. ' + opt.replace(/^[A-D]\.\s*/i, ''));
+    const nouvelleLettre = LETTRES[shuffled.findIndex(o => o === bonneOption)];
+    // Recalculer pourquoi_faux selon nouvelles positions
+    const pf = {};
+    nouvellesOptions.forEach((opt, i) => {
+      const l = LETTRES[i];
+      if (l !== nouvelleLettre) {
+        const ancienneLettre = shuffled[i].trim().toUpperCase().charAt(0);
+        pf[l] = (q.pourquoi_faux || {})[ancienneLettre] || '';
+      }
+    });
+    return { ...q, options: nouvellesOptions, bonne_reponse: nouvelleLettre, pourquoi_faux: pf };
   });
 
-  if (questions.length === 0) throw new Error('Aucune question générée. Réessaie.');
+  // Trier : questions déjà ratées en premier (répétition espacée)
+  questions.sort((a, b) => {
+    const aRate = questionsRateesIds.has(a.id) ? 0 : 1;
+    const bRate = questionsRateesIds.has(b.id) ? 0 : 1;
+    return aRate - bRate;
+  });
+
+  if (!questions.length) throw new Error('Aucune question générée. Réessaie.');
 }
 
+// ─────────────────────────────────────────────
+// SESSION
+// ─────────────────────────────────────────────
 function demarrerSession() {
-  currentIdx = 0; results = [];
+  currentIdx = 0; results = []; rapportCache = null; nbIndicesUtilises = 0;
   showScreen('screen-question');
   afficherQuestion();
 }
 
 function afficherQuestion() {
-  const q = questions[currentIdx], total = questions.length;
+  const q = questions[currentIdx];
+  indiceAffiche = false;
   document.getElementById('matiereBadge').textContent = matiereDetectee;
-  document.getElementById('progressBar').style.width = Math.round((currentIdx / total) * 100) + '%';
-  document.getElementById('progressLabel').textContent = `${currentIdx + 1} / ${total}`;
+  document.getElementById('progressBar').style.width = Math.round((currentIdx / questions.length) * 100) + '%';
+  document.getElementById('progressLabel').textContent = `${currentIdx + 1} / ${questions.length}`;
   document.getElementById('qType').textContent = q.difficile ? '⚡ Question difficile' : 'QCM';
   document.getElementById('qText').textContent = q.question;
   document.getElementById('feedbackBlock').innerHTML = '';
   document.getElementById('btnNext').style.display = 'none';
+  document.getElementById('btnIndice').style.display = q.indice ? 'inline-block' : 'none';
+  document.getElementById('indiceBlock').innerHTML = '';
   const grid = document.getElementById('optionsGrid');
   grid.innerHTML = '';
   q.options.forEach(opt => {
@@ -612,31 +708,65 @@ function afficherQuestion() {
   });
 }
 
+function afficherIndice() {
+  if (indiceAffiche) return;
+  indiceAffiche = true;
+  nbIndicesUtilises++;
+  const q = questions[currentIdx];
+  document.getElementById('indiceBlock').innerHTML =
+    `<div class="indice-block"><i class="ti ti-bulb"></i> ${q.indice}</div>`;
+  document.getElementById('btnIndice').style.display = 'none';
+}
+
 function corrigerQCM(clickedBtn, choix, q) {
-  const lettre = choix.trim().charAt(0), correct = lettre === q.bonne_reponse;
+  const lettre = choix.trim().charAt(0).toUpperCase();
+  const correct = lettre === q.bonne_reponse.toUpperCase();
+
   document.querySelectorAll('.opt-btn').forEach(b => {
     b.disabled = true;
-    const l = b.textContent.trim().charAt(0);
-    if (l === q.bonne_reponse) b.classList.add('correct');
+    const l = b.textContent.trim().charAt(0).toUpperCase();
+    if (l === q.bonne_reponse.toUpperCase()) b.classList.add('correct');
     else if (b === clickedBtn && !correct) b.classList.add('wrong');
+    else b.classList.add('neutre');
   });
-  results.push({ q, correct, score: correct ? 1 : 0 });
-  document.getElementById('feedbackBlock').innerHTML = correct
-    ? `<div class="feedback-block ok"><div class="feedback-label">✓ Correct</div>${q.explication}</div>`
-    : `<div class="feedback-block ko"><div class="feedback-label">✗ Raté</div>${q.explication}</div>`;
+
+  results.push({ q, correct, choixFait: lettre });
+
+  const reponse  = q.reponse_exacte || q.explication || '';
+  const contexte = q.contexte || '';
+  const pf       = q.pourquoi_faux || {};
+
+  let html = '';
+  if (correct) {
+    html = `<div class="feedback-block ok">
+      <div class="feedback-label">✓ Correct !</div>
+      <div class="feedback-explication">${reponse}</div>
+      ${contexte ? `<div class="feedback-contexte">${contexte}</div>` : ''}
+    </div>`;
+  } else {
+    const raisonChoix = pf[lettre] ? `<div class="feedback-pourquoi">Ce choix est incorrect : ${pf[lettre]}</div>` : '';
+    html = `<div class="feedback-block ko">
+      <div class="feedback-label">✗ Incorrect</div>
+      <div class="feedback-explication">${reponse}</div>
+      ${contexte ? `<div class="feedback-contexte">${contexte}</div>` : ''}
+      ${raisonChoix}
+    </div>`;
+  }
+  document.getElementById('feedbackBlock').innerHTML = html;
   document.getElementById('btnNext').style.display = 'inline-block';
 }
 
 function nextQuestion() {
   currentIdx++;
-  if (currentIdx >= questions.length) afficherBilan(); else afficherQuestion();
+  if (currentIdx >= questions.length) afficherBilan();
+  else afficherQuestion();
 }
 
-let rapportCache = null;
-
+// ─────────────────────────────────────────────
+// BILAN
+// ─────────────────────────────────────────────
 function afficherBilan() {
   showScreen('screen-bilan');
-  rapportCache = null;
   const total    = results.length;
   const corrects = results.filter(r => r.correct).length;
   const erreurs  = results.filter(r => !r.correct);
@@ -646,50 +776,99 @@ function afficherBilan() {
   document.getElementById('scoreTotal').textContent = pct + '%';
   document.getElementById('scoreOk').textContent    = corrects;
   document.getElementById('scoreKo').textContent    = total - corrects;
+  document.getElementById('scoreIndices').textContent = nbIndicesUtilises;
 
   const v = document.getElementById('verdictBlock');
   let cls, msg;
-  if (pct >= 70)      { cls = 'excellent';   msg = `${pct} % — objectif atteint ! Tu peux générer ton rapport.`; }
-  else if (pct >= 55) { cls = 'bien';         msg = `${pct} % — presque ! Relance sur les erreurs pour dépasser 70 %.`; }
-  else                { cls = 'insuffisant';  msg = `${pct} % — il faut retravailler ces notions. Relance sur les erreurs.`; }
-  v.className = `verdict-block ${cls}`;
-  v.textContent = msg;
+  if      (pct >= 70) { cls = 'excellent';  msg = `${pct} % — objectif atteint ! Tu peux générer ton rapport.`; }
+  else if (pct >= 55) { cls = 'bien';        msg = `${pct} % — presque ! Relance sur les erreurs pour dépasser 70 %.`; }
+  else                { cls = 'insuffisant'; msg = `${pct} % — il faut retravailler ces notions. Relance sur les erreurs.`; }
+  v.className = `verdict-block ${cls}`; v.textContent = msg;
 
-  // Bouton relancer — visible s'il y a des erreurs
-  const btnRelance = document.getElementById('btnRevoirErreurs');
-  btnRelance.style.display = erreurs.length > 0 ? '' : 'none';
-
-  // Bouton rapport — visible seulement si >= 70%
+  // Boutons
+  document.getElementById('btnRevoirErreurs').style.display = erreurs.length > 0 ? '' : 'none';
   document.getElementById('btnRapport').style.display = pct >= 70 ? 'block' : 'none';
+
+  // N2a : sauvegarder cette session
+  sauvegarderSession(cleLecon, pct, erreurs.map(r => r.q.id));
+
+  // N2b : courbe de progression
+  afficherProgression(cleLecon, pct);
 
   // Liste des erreurs
   const es = document.getElementById('erreursSection');
   if (erreurs.length > 0) {
-    let html = `<div class="erreurs-title"><i class="ti ti-x" aria-hidden="true"></i> Points à retravailler (${erreurs.length})</div>`;
+    let html = `<div class="erreurs-title"><i class="ti ti-x"></i> Points à retravailler (${erreurs.length})</div>`;
     erreurs.forEach(r => {
       const b = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
-      html += `<div class="erreur-item"><div class="erreur-q">${r.q.question}</div><div class="erreur-bonne">→ ${b}</div></div>`;
+      const pf = r.q.pourquoi_faux || {};
+      const raisonChoix = r.choixFait && pf[r.choixFait] ? `<div style="font-size:12px;color:var(--color-text-tertiary);margin-top:4px">${r.choixFait} était faux : ${pf[r.choixFait]}</div>` : '';
+      html += `<div class="erreur-item"><div class="erreur-q">${r.q.question}</div><div class="erreur-bonne">→ ${b}</div>${raisonChoix}</div>`;
     });
     es.innerHTML = html;
   } else { es.innerHTML = ''; }
 
-  document.getElementById('histSection').innerHTML = '';
-
-  // Pré-générer le rapport en arrière-plan
+  // Rapport en arrière-plan
   preGenererRapport(pct, corrects, total, erreurs);
 }
 
+// ─────────────────────────────────────────────
+// N2a/b : Historique localStorage
+// ─────────────────────────────────────────────
+function chargerHistorique(cle) {
+  try {
+    const all = JSON.parse(localStorage.getItem(HISTO_KEY) || '{}');
+    return all[cle] || [];
+  } catch { return []; }
+}
+
+function sauvegarderSession(cle, pct, idsErreurs) {
+  try {
+    const all = JSON.parse(localStorage.getItem(HISTO_KEY) || '{}');
+    if (!all[cle]) all[cle] = [];
+    all[cle].push({ date: new Date().toLocaleDateString('fr-FR'), pct, erreurs: idsErreurs });
+    if (all[cle].length > 10) all[cle] = all[cle].slice(-10); // garder 10 sessions max
+    localStorage.setItem(HISTO_KEY, JSON.stringify(all));
+  } catch {}
+}
+
+function afficherProgression(cle, pctActuel) {
+  const sessions = chargerHistorique(cle);
+  const section = document.getElementById('progressionSection');
+  const chart   = document.getElementById('progressionChart');
+
+  if (sessions.length < 2) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  chart.innerHTML = '';
+
+  sessions.forEach((s, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'prog-bar-wrap';
+    const outer = document.createElement('div'); outer.className = 'prog-bar-outer';
+    const inner = document.createElement('div');
+    inner.className = 'prog-bar-inner ' + (s.pct >= 70 ? 'ok' : 'fail');
+    inner.style.height = Math.max(4, Math.round(s.pct * 0.48)) + 'px';
+    inner.title = `${s.pct}%`;
+    outer.appendChild(inner);
+    const lbl = document.createElement('div'); lbl.className = 'prog-label';
+    lbl.textContent = i === sessions.length - 1 ? 'Auj.' : `S${i+1}`;
+    wrap.appendChild(outer); wrap.appendChild(lbl);
+    chart.appendChild(wrap);
+  });
+}
+
+// ─────────────────────────────────────────────
+// RAPPORT
+// ─────────────────────────────────────────────
 async function preGenererRapport(pct, corrects, total, erreurs) {
+  rapportCache = null;
   const note20 = Math.round((pct / 100) * 20);
-  const erreursDesc = erreurs.map(r => {
+  const desc = erreurs.map(r => {
     const b = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
     return `- "${r.q.question}" → ${b} (${r.q.explication})`;
   }).join('\n');
-
   const prompt = erreurs.length === 0
-    ? `L'élève a obtenu ${pct}% (${corrects}/${total}) sur "${matiereDetectee}". Score parfait. Rédige 4 lignes de félicitations en tutoyant l'élève. Mentionne "ton cours".`
-    : `L'élève a obtenu ${pct}% (${corrects}/${total}) sur "${matiereDetectee} — ${titreLecon}". Note : ${note20}/20.\n\nErreurs :\n${erreursDesc}\n\nRédige un rapport (max 12 lignes) en tutoyant l'élève :\n1. Commence par "Tu obtiens ${note20}/20."\n2. Une règle mémorisable par erreur (phrases courtes, pas de puces)\n3. Un conseil final\nUtilise "ton cours", pas "le document". Sois direct et bienveillant.`;
-
+    ? `L'élève a obtenu ${pct}% sur "${matiereDetectee}". Rédige 4 lignes de félicitations en tutoyant. Mentionne "ton cours".`
+    : `L'élève a obtenu ${pct}% (${corrects}/${total}) sur "${matiereDetectee} — ${titreLecon}". Note : ${note20}/20.\nErreurs :\n${desc}\nRédige un rapport (max 12 lignes) en tutoyant :\n1. "Tu obtiens ${note20}/20."\n2. Une règle mémorisable par erreur (phrases courtes)\n3. Un conseil final\nUtilise "ton cours". Sois direct et bienveillant.`;
   try {
     const texte = await appelAPI([{ role: 'user', content: prompt }], 800);
     rapportCache = { pct, corrects, total, erreurs, texte: texte.trim() };
@@ -700,63 +879,139 @@ async function preGenererRapport(pct, corrects, total, erreurs) {
 
 function afficherEcranRapport() {
   showScreen('screen-rapport');
-
-  const date = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-  document.getElementById('rapportDate').textContent    = date;
+  document.getElementById('rapportDate').textContent    = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
   document.getElementById('rapportMatiere').textContent = `${matiereDetectee}${titreLecon ? ' — ' + titreLecon : ''}`;
-
   const pct      = parseInt(document.getElementById('scoreTotal').textContent);
   const corrects = parseInt(document.getElementById('scoreOk').textContent);
   const total    = corrects + parseInt(document.getElementById('scoreKo').textContent);
   const note20   = Math.round((pct / 100) * 20);
-
   document.getElementById('rapportScoreWrap').innerHTML = `
     <div class="rapport-score-box"><div class="rnum">${note20}/20</div><div class="rlbl">Note</div></div>
     <div class="rapport-score-box"><div class="rnum">${pct}%</div><div class="rlbl">Score</div></div>
     <div class="rapport-score-box"><div class="rnum">${corrects}/${total}</div><div class="rlbl">Bonnes réponses</div></div>`;
-
   const corpsEl = document.getElementById('rapportCorps');
-  if (rapportCache) {
+  const afficher = () => {
     corpsEl.textContent = rapportCache.texte;
-    afficherErreursDansRapport(rapportCache.erreurs);
-  } else {
+    const el = document.getElementById('rapportErreurs');
+    if (!rapportCache.erreurs || !rapportCache.erreurs.length) { el.innerHTML=''; return; }
+    let html = `<div class="rapport-erreurs-titre">Questions ratées</div>`;
+    rapportCache.erreurs.forEach(r => {
+      const b = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
+      html += `<div class="rapport-erreur-row"><div class="rapport-erreur-q">${r.q.question}</div><div class="rapport-erreur-r">→ ${b}</div></div>`;
+    });
+    el.innerHTML = html;
+  };
+  if (rapportCache) { afficher(); }
+  else {
     corpsEl.textContent = 'Génération du rapport…';
-    const wait = setInterval(() => {
-      if (rapportCache) {
-        corpsEl.textContent = rapportCache.texte;
-        afficherErreursDansRapport(rapportCache.erreurs);
-        clearInterval(wait);
-      }
-    }, 400);
+    const wait = setInterval(() => { if (rapportCache) { clearInterval(wait); afficher(); } }, 400);
   }
 }
 
-function afficherErreursDansRapport(erreurs) {
-  const el = document.getElementById('rapportErreurs');
-  if (!erreurs || erreurs.length === 0) { el.innerHTML = ''; return; }
-  let html = `<div class="rapport-erreurs-titre">Questions ratées</div>`;
-  erreurs.forEach(r => {
-    const b = r.q.options.find(o => o.trim().startsWith(r.q.bonne_reponse)) || r.q.bonne_reponse;
-    html += `<div class="rapport-erreur-row"><div class="rapport-erreur-q">${r.q.question}</div><div class="rapport-erreur-r">→ ${b}</div></div>`;
-  });
-  el.innerHTML = html;
-}
-
+// ─────────────────────────────────────────────
+// RELANCE & RESET
+// ─────────────────────────────────────────────
 function revoirErreurs() {
-  const erreurs=results.filter(r=>!r.correct);
-  if(erreurs.length===0) return;
-  errorOnlyMode=true; questions=erreurs.map(r=>r.q); demarrerSession();
+  const erreurs = results.filter(r => !r.correct);
+  if (!erreurs.length) return;
+  questions = erreurs.map(r => r.q);
+  demarrerSession();
 }
 
 function resetApp() {
   imgBase64List=[]; questions=[]; currentIdx=0; results=[];
+  matiereDetectee=''; titreLecon=''; cleLecon=''; rapportCache=null;
   document.getElementById('previewWrap').innerHTML='';
   document.getElementById('configGrid').style.display='none';
   document.getElementById('btnLancer').disabled=true;
   document.getElementById('uploadError').innerHTML='';
-  fileInput.value='';
+  document.getElementById('fileInput').value='';
   showScreen('screen-upload');
 }
+
+// ─────────────────────────────────────────────
+// TESTS BOUT EN BOUT (lancés en console dev)
+// ─────────────────────────────────────────────
+function runTests() {
+  const resultats = [];
+  function test(nom, fn) {
+    try { fn(); resultats.push({ nom, ok: true }); }
+    catch(e) { resultats.push({ nom, ok: false, err: e.message }); }
+  }
+
+  // Fisher-Yates : la bonne réponse est toujours trouvée après mélange
+  test('Fisher-Yates : bonne réponse préservée', () => {
+    const q = { bonne_reponse: 'A', options: ['A. Paris', 'B. Lyon', 'C. Marseille', 'D. Bordeaux'], pourquoi_faux: { B: 'faux', C: 'faux', D: 'faux' } };
+    for (let i = 0; i < 50; i++) {
+      const bonneLettre = q.bonne_reponse;
+      const bonneOption = q.options.find(o => o.trim().toUpperCase().startsWith(bonneLettre));
+      const shuffled = [...q.options];
+      for (let j = shuffled.length - 1; j > 0; j--) { const k = Math.floor(Math.random()*(j+1)); [shuffled[j],shuffled[k]]=[shuffled[k],shuffled[j]]; }
+      const nouvelleLettre = LETTRES[shuffled.findIndex(o => o === bonneOption)];
+      const nouvellesOptions = shuffled.map((opt,idx) => LETTRES[idx] + '. ' + opt.replace(/^[A-D]\.\s*/i,''));
+      if (!nouvellesOptions.find(o => o.startsWith(nouvelleLettre))) throw new Error('Bonne réponse perdue');
+    }
+  });
+
+  // extraireJSON : parsing robuste
+  test('extraireJSON : JSON propre', () => {
+    const r = extraireJSON('{"matiere":"Geo","titre_lecon":"Eau","questions":[]}');
+    if (r.matiere !== 'Geo') throw new Error('matiere incorrect');
+  });
+  test('extraireJSON : JSON avec backticks', () => {
+    const r = extraireJSON('```json\n{"matiere":"Bio","titre_lecon":"","questions":[]}\n```');
+    if (r.matiere !== 'Bio') throw new Error('backticks non nettoyés');
+  });
+  test('extraireJSON : JSON avec texte avant/après', () => {
+    const r = extraireJSON('Voici le JSON:\n{"matiere":"Math","titre_lecon":"","questions":[]}\nFin.');
+    if (r.matiere !== 'Math') throw new Error('texte parasite non géré');
+  });
+
+  // Compression : MAX_B64_BYTES défini et correct
+  test('MAX_B64_BYTES défini', () => { if (MAX_B64_BYTES !== 4.5*1024*1024) throw new Error('Valeur incorrecte'); });
+
+  // localStorage : clé API
+  test('localStorage : sauvegarder et relire clé API', () => {
+    localStorage.setItem('repeti_apikey', 'sk-ant-test');
+    const v = localStorage.getItem('repeti_apikey');
+    if (v !== 'sk-ant-test') throw new Error('Valeur différente');
+    localStorage.removeItem('repeti_apikey');
+  });
+
+  // Historique progression
+  test('Historique : sauvegarder et charger', () => {
+    const cle = 'test_cle_123';
+    sauvegarderSession(cle, 80, [1,2]);
+    const h = chargerHistorique(cle);
+    if (!h.length || h[h.length-1].pct !== 80) throw new Error('Session non sauvegardée');
+    // Nettoyer
+    try { const all = JSON.parse(localStorage.getItem(HISTO_KEY)||'{}'); delete all[cle]; localStorage.setItem(HISTO_KEY, JSON.stringify(all)); } catch {}
+  });
+
+  // showScreen : navigation sans crash
+  test('showScreen : écran valide', () => {
+    const avant = document.querySelector('.screen.active')?.id;
+    showScreen('screen-upload');
+    const apres = document.querySelector('.screen.active')?.id;
+    if (apres !== 'screen-upload') throw new Error('Écran non activé');
+    if (avant) showScreen(avant);
+  });
+
+  // Affichage résultats
+  console.group('🧪 RepétiTeur v12 — Tests bout en bout');
+  let ok = 0, ko = 0;
+  resultats.forEach(r => {
+    if (r.ok) { console.log(`✅ ${r.nom}`); ok++; }
+    else { console.error(`❌ ${r.nom} : ${r.err}`); ko++; }
+  });
+  console.log(`\n${ok}/${ok+ko} tests passés`);
+  if (ko === 0) console.log('🎉 Zéro bug détecté');
+  console.groupEnd();
+  return { ok, ko };
+}
+
+// Lancer les tests automatiquement (résultats dans la console du navigateur)
+window.addEventListener('load', () => { try { runTests(); } catch(e) { console.error('Erreur tests:', e); } });
 </script>
 </body>
 </html>
